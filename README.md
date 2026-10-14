@@ -4,7 +4,7 @@
 
 对 AI 说“打开客厅空调”，让它通过你自己的美居账号找到设备、发送控制，并告诉你云端回读结果。
 
-本项目提供 **Python 本地 stdio MCP 服务 + `meiju-control` Agent Skill**。当前版本 **v0.2.0，实验性**，使用 MCP Python SDK（`mcp>=2.3,<3`），需要 Python 3.11 或更新版本。设备须已绑定在官方美居 App 中。
+本项目提供 **Python 本地 stdio MCP 服务 + `meiju-control` Agent Skill**。当前版本 **v0.2.1，实验性**，使用 MCP Python SDK（`mcp>=2.3,<3`），需要 Python 3.11 或更新版本。设备须已绑定在官方美居 App 中。
 
 本项目独立开发，与美的、美居无隶属关系，也未获得官方背书。源码位于 [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp)，版本包见 [GitHub Releases](https://github.com/blackcocwhite/meiju-mcp/releases)。未发布到 PyPI。
 
@@ -57,7 +57,7 @@ MCP 提供工具和参数校验，Skill 组织登录、目标匹配、读写及�
 
 ### 2. 获取文件并安装 MCP
 
-从 [Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0) 下载源码 ZIP，解压后进入含有 `pyproject.toml` 和 `uv.lock` 的目录（通常叫 `meiju-mcp-0.2.0`）。也可执行 `git clone https://github.com/blackcocwhite/meiju-mcp.git`；固定版本使用 `v0.2.0` 标签。以下 `/absolute/path/meiju-mcp` 都应替换为你的实际目录。
+从 [Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.1) 下载源码 ZIP，解压后进入含有 `pyproject.toml` 和 `uv.lock` 的目录（通常叫 `meiju-mcp-0.2.1`）。也可执行 `git clone https://github.com/blackcocwhite/meiju-mcp.git`；固定版本使用 `v0.2.1` 标签。以下 `/absolute/path/meiju-mcp` 都应替换为你的实际目录。
 
 **源码 + uv（各平台通用）：**
 
@@ -85,9 +85,9 @@ py -3 -m venv .venv
 & .\.venv\Scripts\meiju-mcp.exe --version
 ```
 
-**仅下载 wheel 的用户：**在一个固定的安装目录创建 `.venv`；将上面的 `pip install .` 替换为 `pip install "/path/to/meiju_mcp-0.2.0-py3-none-any.whl"`，其余版本检查和 MCP 注册步骤相同。Skill 另下载 `meiju-control-0.2.0.zip`，按[独立 ZIP 安装步骤](docs/agent-skill.md#安装)安装，不需要再下载完整源码。
+**仅下载 wheel 的用户：**在一个固定的安装目录创建 `.venv`；将上面的 `pip install .` 替换为 `pip install "/path/to/meiju_mcp-0.2.1-py3-none-any.whl"`，其余版本检查和 MCP 注册步骤相同。Skill 另下载 `meiju-control-0.2.1.zip`，按[独立 ZIP 安装步骤](docs/agent-skill.md#安装)安装，不需要再下载完整源码。
 
-版本检查应输出 `0.2.0` 后退出。**此时不要手动运行一个常驻的 `meiju-mcp` 进程**；完成 Skill 和客户端配置后，由客户端启动它。若误在终端直接运行而一直等待输入，按 Ctrl+C 停止这个手动启动的进程，再继续配置；不要停止其他已登录的会话。凭据无需写入环境变量或客户端配置。
+版本检查应输出 `0.2.1` 后退出。**此时不要手动运行一个常驻的 `meiju-mcp` 进程**；完成 Skill 和客户端配置后，由客户端启动它。若误在终端直接运行而一直等待输入，按 Ctrl+C 停止这个手动启动的进程，再继续配置；不要停止其他已登录的会话。凭据无需写入环境变量或客户端配置。
 
 ## 配置 AI 客户端
 

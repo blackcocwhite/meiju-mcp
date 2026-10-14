@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meiju-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Local MCP server for account-scoped Midea Meiju air-conditioner control"
 readme = "README.md"
 requires-python = ">=3.11"

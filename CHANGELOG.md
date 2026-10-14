@@ -1,5 +1,13 @@
 # 更新记录
 
+## v0.2.1 — 2026-10-14
+
+1. **安装更明确：**区分源码与独立 Skill ZIP 路径，补齐 Windows 命令、安装顺序和首次原生加载验收，避免重复启动和丢失登录。
+2. **原生对话证据：**纳入独立 Codex 聊天的工具发现、Skill 自动触发、新登录、设备/状态/能力读取及零匹配处理记录。
+3. **版本包同步：**更新源码、wheel、sdist 和 Skill ZIP，独立 Skill 包附带可单独阅读的安装指南与脱敏验证记录。
+
+本版未改变 7 个 MCP 工具、控制协议或会话存储方式。原生验收实际运行于 v0.2.0；v0.2.1 打包这些记录，不把历史记录改写为新的物理控制测试。现有进程无需为本次发布而退出；以后主动升级并重启时才需要重新登录。
+
 ## v0.2.0 — 2026-10-14
 
 公开版本状态以 [GitHub Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0) 和 [CI](https://github.com/blackcocwhite/meiju-mcp/actions) 为准。

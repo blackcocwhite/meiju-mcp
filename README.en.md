@@ -4,7 +4,7 @@
 
 Ask your AI agent to turn on the living-room air conditioner, read the bedroom temperature, or turn off the device you just selected.
 
-Meiju MCP combines a **local Python stdio MCP server** with the **`meiju-control` Agent Skill**, using your own Midea Meiju account and devices already bound in the official app. **Version 0.2.0 is experimental**, requires Python 3.11+, and uses the MCP Python SDK (`mcp>=2.3,<3`).
+Meiju MCP combines a **local Python stdio MCP server** with the **`meiju-control` Agent Skill**, using your own Midea Meiju account and devices already bound in the official app. **Version 0.2.1 is experimental**, requires Python 3.11+, and uses the MCP Python SDK (`mcp>=2.3,<3`).
 
 This is an independent project, unaffiliated with and not endorsed by Midea or Meiju. Source is available at [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp), with version packages on [GitHub Releases](https://github.com/blackcocwhite/meiju-mcp/releases). It has not been published to PyPI.
 
@@ -39,7 +39,7 @@ Use Python 3.11+ and a client supporting local stdio MCP. The browser, client an
 
 Check `python3 --version` on macOS/Linux or `py -3 --version` in Windows PowerShell. If missing or too old, install a suitable version from [Python](https://www.python.org/downloads/). For the uv route, check `uv --version` and use the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) if needed, or choose pip. For Codex CLI setup, confirm `codex --version` works and complete the client's own account setup first; Meiju login is separate.
 
-Download a source ZIP from [Releases](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0) and enter the extracted directory containing `pyproject.toml` and `uv.lock` (usually `meiju-mcp-0.2.0`). Alternatively, run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use tag `v0.2.0` for a fixed version. Replace placeholder paths below with your actual directory.
+Download a source ZIP from [Releases](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.1) and enter the extracted directory containing `pyproject.toml` and `uv.lock` (usually `meiju-mcp-0.2.1`). Alternatively, run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use tag `v0.2.1` for a fixed version. Replace placeholder paths below with your actual directory.
 
 **Source with uv, all platforms:**
 
@@ -67,9 +67,9 @@ py -3 -m venv .venv
 & .\.venv\Scripts\meiju-mcp.exe --version
 ```
 
-**Wheel-only users:** create `.venv` in a permanent installation directory and replace `pip install .` above with `pip install "/path/to/meiju_mcp-0.2.0-py3-none-any.whl"`. Download the separate `meiju-control-0.2.0.zip` and follow its [standalone Skill installation steps](docs/agent-skill.md#安装); a full source checkout is not required.
+**Wheel-only users:** create `.venv` in a permanent installation directory and replace `pip install .` above with `pip install "/path/to/meiju_mcp-0.2.1-py3-none-any.whl"`. Download the separate `meiju-control-0.2.1.zip` and follow its [standalone Skill installation steps](docs/agent-skill.md#安装); a full source checkout is not required.
 
-The version check should print `0.2.0` and exit. Do not manually leave a stdio server running at this point; let the configured AI client start it after installing the Skill. If a manually started terminal command waits for input, stop only that process with Ctrl+C and continue setup. Do not stop another authenticated session. No account credentials are needed in environment variables or MCP configuration.
+The version check should print `0.2.1` and exit. Do not manually leave a stdio server running at this point; let the configured AI client start it after installing the Skill. If a manually started terminal command waits for input, stop only that process with Ctrl+C and continue setup. Do not stop another authenticated session. No account credentials are needed in environment variables or MCP configuration.
 
 ## Connect an AI client
 

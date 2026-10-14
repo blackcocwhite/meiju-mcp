@@ -25,9 +25,11 @@ MCP 提供 7 个工具，Skill 告诉 Agent 如何登录、选设备、控制及
 | 你下载了什么 | Skill 源目录 |
 | --- | --- |
 | 完整源码 ZIP、git 仓库或 sdist | 项目目录中的 `skills/meiju-control/` |
-| 独立 `meiju-control-0.2.0.zip` | 解压目录中的 `meiju-control/`，没有外层 `skills/` |
+| 独立 `meiju-control-0.2.1.zip` | 解压目录中的 `meiju-control/`，没有外层 `skills/` |
 
 无论哪种来源，目录内都应直接包含 `SKILL.md`、`agents/openai.yaml`、`references/conversations.md`、`LICENSE` 和 `NOTICE`。安装整个目录，不要只复制 `SKILL.md`，也不要多嵌套一层 `meiju-control`。
+
+从 v0.2.1 开始，独立 Skill ZIP 另外附带 `INSTALLATION.md` 和 `VALIDATION.md`。它们由仓库安装指南与脱敏验证记录导出；包内链接已适配，外部项目链接固定到对应 tag。源码目录继续以 `docs/` 中的原文为准。
 
 ### Codex：macOS/Linux
 

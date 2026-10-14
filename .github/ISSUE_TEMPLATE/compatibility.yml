@@ -20,7 +20,7 @@ body:
     id: version
     attributes:
       label: 项目版本或提交号 / Version or commit
-      placeholder: "0.2.0 或提交 SHA"
+      placeholder: "0.2.1 或提交 SHA"
     validations:
       required: true
   - type: input
