@@ -6,7 +6,7 @@ Ask your AI agent to turn on the living-room air conditioner, read the bedroom t
 
 Meiju MCP combines a **local Python stdio MCP server** with the **`meiju-control` Agent Skill**, using your own Midea Meiju account and devices already bound in the official app. **Version 0.2.0 is experimental**, requires Python 3.11+, and uses the MCP Python SDK (`mcp>=2.3,<3`).
 
-This is an independent project, unaffiliated with and not endorsed by Midea or Meiju. These instructions install the source project; they do not imply an existing PyPI release or a particular published GitHub repository.
+This is an independent project, unaffiliated with and not endorsed by Midea or Meiju. Source is available at [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp), with version packages on [GitHub Releases](https://github.com/blackcocwhite/meiju-mcp/releases). It has not been published to PyPI.
 
 [Install](#install-from-source) · [Connect](#connect-an-ai-client) · [Conversation examples](skills/meiju-control/references/conversations.md) · [Compatibility](docs/compatibility.md) · [Validation](docs/validation.md) · [Changelog](CHANGELOG.md) · [GitHub preparation](docs/github-release.md)
 
@@ -32,6 +32,8 @@ The flow is: user → AI agent and Skill → local stdio MCP process → Meiju c
 ## Install from source
 
 Bind your devices in the official Meiju app first. You need Python 3.11+ and an AI client that can start a local stdio MCP process. Paths below are placeholders.
+
+Download a source ZIP from Releases or run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use the `v0.2.0` tag for a fixed version.
 
 With [uv](https://docs.astral.sh/uv/):
 

@@ -1,6 +1,6 @@
-# GitHub 公开仓库与版本上传准备
+# GitHub 公开仓库与版本发布
 
-当前准备版本为 **v0.2.0（实验性）**。本地提交、tag、压缩包与远端公开发布是不同步骤；这里记录上传所需内容和操作顺序，不表示 GitHub 仓库已经创建、CI 已运行或 PyPI 已发布。
+公开仓库为 [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp)，版本为 **v0.2.0（实验性预发布）**。本地提交、tag、压缩包与远端发布是不同步骤；本页保留维护流程，实际发布状态见 [Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0)，CI 见 [Actions](https://github.com/blackcocwhite/meiju-mcp/actions)。未发布到 PyPI。
 
 ## 公开仓库内容
 
@@ -61,7 +61,7 @@ git archive --format=zip --prefix=meiju-mcp-0.2.0/ \
 - Git 提交作者邮箱也是公开历史的一部分，维护者应确认可公开使用。
 - 是否启用私密漏洞报告，联系渠道是否与 `SECURITY.md` 一致。
 
-项目尚未确定公开仓库 URL，因此文档没有填写虚构 clone 地址、下载链接、徽章或 PyPI 安装名。
+当前仓库 URL 为 `https://github.com/blackcocwhite/meiju-mcp.git`；未来迁移仓库或发布新版本时应重新核对目标，不沿用未知远端。未提供 PyPI 安装命令。
 
 ## 上传顺序
 

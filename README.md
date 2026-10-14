@@ -6,7 +6,7 @@
 
 本项目提供 **Python 本地 stdio MCP 服务 + `meiju-control` Agent Skill**。当前版本 **v0.2.0，实验性**，使用 MCP Python SDK（`mcp>=2.3,<3`），需要 Python 3.11 或更新版本。设备须已绑定在官方美居 App 中。
 
-本项目独立开发，与美的、美居无隶属关系，也未获得官方背书。当前交付为可从源码安装的项目，未宣称已发布到 PyPI 或任何指定 GitHub 仓库。
+本项目独立开发，与美的、美居无隶属关系，也未获得官方背书。源码位于 [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp)，版本包见 [GitHub Releases](https://github.com/blackcocwhite/meiju-mcp/releases)。未发布到 PyPI。
 
 [安装](#快速安装) · [AI 客户端配置](#配置-ai-客户端) · [Skill 对话示例](skills/meiju-control/references/conversations.md) · [兼容性](docs/compatibility.md) · [验证记录](docs/validation.md) · [更新记录](CHANGELOG.md) · [GitHub 上传准备](docs/github-release.md)
 
@@ -46,6 +46,8 @@ MCP 提供工具和参数校验，Skill 组织登录、目标匹配、读写及�
 ## 快速安装
 
 先在官方美居 App 中绑定设备。准备 Python 3.11+，以及支持启动本地 stdio MCP 服务的 AI 客户端。你可以把项目源码放在任意本地目录，以下路径均为占位示例。
+
+可以从 Release 下载源码 ZIP，或执行 `git clone https://github.com/blackcocwhite/meiju-mcp.git` 获取仓库；需要固定版本时使用 `v0.2.0` 标签。
 
 推荐使用 [uv](https://docs.astral.sh/uv/)：
 

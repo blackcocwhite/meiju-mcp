@@ -60,6 +60,16 @@
 
 本轮测试使用 mock 与本机回环，不发送真实短信或操作空调。Skill 的独立模拟记录见[使用说明](agent-skill.md)，新增对话材料为合成示例。版本包的内容和独立安装验收结果另存于发布附件 `release-manifest.json`，不能把该记录当作托管 CI 或 v0.2.0 再次真机验证。
 
+## v0.2.0 发布前 Windows 修复：2026-10-14
+
+首次推送后的 [CI](https://github.com/blackcocwhite/meiju-mcp/actions/runs/38496542349) 中，Linux Python 3.11/3.13 和 macOS Python 3.13 通过，Windows Python 3.13 为 272 项通过、4 项失败：登录静态资源使用默认系统编码读取，中文内容解码失败后被转换为 HTTP 503。
+
+新增 6 个本机 HTTP 回归场景（3 个资源 × cp1252/GBK 两种默认编码）后，旧代码为 4 项失败、2 项通过；显式使用 UTF-8 修复后 6 项全部通过，完整本机套件 282 项通过，Ruff 检查和格式检查通过。该修复改变了资源读取编码，所以上一节“6 个模块 AST 一致”的结论仅适用于首次构建，不适用于修复后的版本。
+
+修复提交 `3738f1d` 的[跨平台 CI](https://github.com/blackcocwhite/meiju-mcp/actions/runs/38497051636)已通过。它验证离线测试及本机回环流程，不验证各系统上的真实美居账号或物理空调控制。
+
+Release 尚处于草稿阶段时，经维护者确认更新 v0.2.0 标签和附件，原始本地包保留备份。最终提交、附件校验值与各平台 CI 结果以 Release 的构建清单和 [Actions](https://github.com/blackcocwhite/meiju-mcp/actions) 为准；没有为了验收重启已登录的 MCP 或操作空调。
+
 无需购齐所有空调。后续由设备所有者自愿按[兼容性模板](../.github/ISSUE_TEMPLATE/compatibility.yml)报告具体型号与操作结果；维护者按协议配置积累证据，只将实际验证的动作列为已验证。
 
 复现命令见 [README](../README.md#开发与测试)。
