@@ -23,7 +23,7 @@ The server provides a local browser login flow, account-scoped device discovery,
 | State reads | Power, target/indoor temperature, mode and fan; unknown fields stay unknown | Read and compared with the app |
 | Power on/off | One partial write followed by readback | One on and one off on the same model |
 | Temperature, mode and fan | Restricted experimental candidate controls | Explicit writes untested |
-| Natural-language device selection | Skill combines home, room and name, clarifying ambiguity | Synthetic decision simulations, not all-client testing |
+| Natural-language device selection | Skill combines home, room and name, clarifying ambiguity | A separate local Codex chat verified implicit selection, login and read-only dialogue; other clients are not individually tested |
 
 The project does not implement device binding, account registration/recovery, swing, timers, energy reporting, LAN-only control or remote hosted login. Overseas MSmartHome accounts and other Midea appliance types are not claimed compatible.
 

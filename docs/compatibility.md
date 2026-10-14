@@ -10,7 +10,7 @@
 | 当前 Python/MCP 实现 | 历史离线测试；2026-10-14 对一台 `KFR-35G/N8HE1ⅡPro` 完成真实登录、设备与状态读取、单次开机和单次关机，用户确认实机响应 | 温度、模式、风速的独立控制、其他型号或长期可靠性已验证 |
 | Linux Python 3.11/3.13 | 已配置 CI 安装、静态检查与测试任务 | 托管 CI 已运行成功或有设备兼容性证据 |
 | macOS/Windows | 已配置 pip 安装和离线测试任务 | 所有系统版本、浏览器和 AI 客户端均兼容 |
-| 本地 stdio AI 客户端 | 本机 Codex 配置已保存；持续 stdio JSON-RPC 连接完成上述实测 | 当前聊天原生工具目录自动加载、每种客户端均经过人工接入验证 |
+| 本地 stdio AI 客户端 | 独立 Codex 本机聊天发现 7 个原生工具，自动选用 Skill，完成新登录与设备、状态、能力读取 | 原生控制与退出工具均已执行、其他客户端均经过人工接入验证 |
 | 网页 AI / 仅远程 MCP 客户端 | 当前无直接接入实现 | 只填入某个 URL 即可连接 |
 
 CI 的实际状态应以对应提交的运行结果为准。详细实测过程与边界见[验证记录](validation.md)。任何后续实机报告都应注明代码版本、平台、公开型号、执行的具体动作和回读结果，并去除账号与设备标识。
@@ -50,7 +50,7 @@ CI 的实际状态应以对应提交的运行结果为准。详细实测过程�
 
 ## English summary
 
-The local Swift predecessor's evidence remains separate. On 2026-10-14, the Python/MCP implementation completed real login, device discovery, status reads, one power-on request, and one power-off request for a single KFR-35G/N8HE1ⅡPro on a Mac. Cloud power readbacks matched, and the user confirmed physical startup and shutdown. Explicit temperature, mode, and fan controls, other models, and long-term reliability remain unverified. Codex configuration was saved; this session used a persistent stdio JSON-RPC connection, and native tool-catalog loading remains unverified. CI configuration is not a completed CI run.
+The local Swift predecessor's evidence remains separate. On 2026-10-14, the Python/MCP implementation completed real login, device discovery, status reads, one power-on request, and one power-off request for a single KFR-35G/N8HE1ⅡPro on a Mac. Cloud power readbacks matched, and the user confirmed physical startup and shutdown. Explicit temperature, mode, and fan controls, other models, and long-term reliability remain unverified. A later separate local Codex chat discovered all seven native tools, implicitly selected the Skill, and completed fresh login, device listing, status and capability reads. It did not execute control or logout tools. See the dated validation record for these separate sessions and actual hosted CI evidence.
 
 Type `0xAC` uses the experimental `generic_ac_lua_v1` profile without an IIPro model lock. The temperature, mode, and fan ranges above are client policy candidates, not discovered or confirmed hardware capabilities. Capabilities expose candidate policy and observed fields; unknown state stays unknown. Unsupported device types and arbitrary raw commands are rejected.
 
