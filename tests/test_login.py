@@ -8,6 +8,7 @@ import json
 import logging
 import socket
 import time
+from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import aiohttp
@@ -89,6 +90,30 @@ async def post(env, path="/api/sms", payload=None, headers=None):
         headers=defaults if headers is None else headers,
     ) as response:
         return response.status, await response.json(), response.headers
+
+
+@pytest.mark.parametrize("locale_encoding", ["cp1252", "gbk"])
+@pytest.mark.parametrize(
+    "route,filename", [("/", "index.html"), ("/login.js", "login.js"), ("/login.css", "login.css")]
+)
+async def test_static_assets_ignore_system_text_encoding(
+    portal, monkeypatch, locale_encoding, route, filename
+):
+    original_open = Path.open
+
+    def locale_open(path, mode="r", buffering=-1, encoding=None, errors=None, newline=None):
+        if path.parent == login_module._STATIC and "b" not in mode and encoding in (None, "locale"):
+            encoding = locale_encoding
+        return original_open(path, mode, buffering, encoding, errors, newline)
+
+    monkeypatch.setattr(Path, "open", locale_open)
+    expected = (login_module._STATIC / filename).read_bytes().decode("utf-8").replace("\r\n", "\n")
+    _, fake, session, origin, _ = portal
+    async with session.get(origin + route) as response:
+        assert response.status == 200
+        assert response.charset == "utf-8"
+        assert await response.text() == expected
+    assert not fake.sms_calls and not fake.verify_calls
 
 
 async def test_lazy_listener_authenticated_does_not_bind():

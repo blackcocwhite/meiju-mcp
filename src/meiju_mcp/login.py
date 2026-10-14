@@ -169,13 +169,17 @@ class LoginPortal:
         return response
 
     async def _index(self, request: web.Request) -> web.Response:
-        return web.Response(text=(_STATIC / "index.html").read_text(), content_type="text/html")
+        return web.Response(
+            text=(_STATIC / "index.html").read_text(encoding="utf-8"), content_type="text/html"
+        )
 
     async def _stylesheet(self, request: web.Request) -> web.Response:
-        return web.Response(text=(_STATIC / "login.css").read_text(), content_type="text/css")
+        return web.Response(text=(_STATIC / "login.css").read_text(encoding="utf-8"), content_type="text/css")
 
     async def _javascript(self, request: web.Request) -> web.Response:
-        return web.Response(text=(_STATIC / "login.js").read_text(), content_type="text/javascript")
+        return web.Response(
+            text=(_STATIC / "login.js").read_text(encoding="utf-8"), content_type="text/javascript"
+        )
 
     def _authorize(self, request: web.Request) -> _Flow | web.Response:
         flow = self._flow
