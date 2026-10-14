@@ -31,31 +31,45 @@ The flow is: user → AI agent and Skill → local stdio MCP process → Meiju c
 
 ## Install from source
 
-Bind your devices in the official Meiju app first. You need Python 3.11+ and an AI client that can start a local stdio MCP process. Paths below are placeholders.
+Bind your devices in the official Meiju app first. Follow this order: **prepare prerequisites → install MCP → [install the Skill](docs/agent-skill.md#安装) → configure the client → verify a new chat → log in to Meiju**. Finish setup before login so a client reload does not discard a newly authenticated MCP session.
 
-Download a source ZIP from Releases or run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use the `v0.2.0` tag for a fixed version.
+### Prerequisites
 
-With [uv](https://docs.astral.sh/uv/):
+Use Python 3.11+ and a client supporting local stdio MCP. The browser, client and MCP must run on the same computer; a remote server plus a local browser is outside this login flow.
+
+Check `python3 --version` on macOS/Linux or `py -3 --version` in Windows PowerShell. If missing or too old, install a suitable version from [Python](https://www.python.org/downloads/). For the uv route, check `uv --version` and use the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) if needed, or choose pip. For Codex CLI setup, confirm `codex --version` works and complete the client's own account setup first; Meiju login is separate.
+
+Download a source ZIP from [Releases](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0) and enter the extracted directory containing `pyproject.toml` and `uv.lock` (usually `meiju-mcp-0.2.0`). Alternatively, run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use tag `v0.2.0` for a fixed version. Replace placeholder paths below with your actual directory.
+
+**Source with uv, all platforms:**
 
 ```sh
 cd /absolute/path/meiju-mcp
 uv sync --frozen
-uv run --frozen --directory /absolute/path/meiju-mcp meiju-mcp
+uv run --frozen meiju-mcp --version
 ```
 
-Or use pip in a virtual environment:
+**Source with pip, macOS/Linux:**
 
 ```sh
 cd /absolute/path/meiju-mcp
-python -m venv .venv
-# macOS / Linux
-. .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install .
-meiju-mcp
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+.venv/bin/meiju-mcp --version
 ```
 
-The command starts a stdio MCP server and waits for protocol input. Your AI client should normally launch and manage it. No login credentials are required in environment variables or MCP configuration.
+**Source with pip, Windows PowerShell:**
+
+```powershell
+Set-Location "C:\projects\meiju-mcp"
+py -3 -m venv .venv
+& .\.venv\Scripts\python.exe -m pip install .
+& .\.venv\Scripts\meiju-mcp.exe --version
+```
+
+**Wheel-only users:** create `.venv` in a permanent installation directory and replace `pip install .` above with `pip install "/path/to/meiju_mcp-0.2.0-py3-none-any.whl"`. Download the separate `meiju-control-0.2.0.zip` and follow its [standalone Skill installation steps](docs/agent-skill.md#安装); a full source checkout is not required.
+
+The version check should print `0.2.0` and exit. Do not manually leave a stdio server running at this point; let the configured AI client start it after installing the Skill. If a manually started terminal command waits for input, stop only that process with Ctrl+C and continue setup. Do not stop another authenticated session. No account credentials are needed in environment variables or MCP configuration.
 
 ## Connect an AI client
 
@@ -78,14 +92,29 @@ For a pip installation, set `command` to the virtual environment executable and 
 
 Only local stdio transport is included. Web-only AI clients and clients that require a remote MCP URL cannot connect directly. Login links use `127.0.0.1` on the server's machine, so open them in a browser on that same machine. Remote deployment login is outside this release's scope.
 
-For Codex, inspect `codex mcp get meiju` first to avoid adding a duplicate. If absent, after installing the project run:
+### Codex setup and first-use verification
+
+Install the [Skill](docs/agent-skill.md#安装) first. Run `codex mcp get meiju` and reuse an existing entry if its executable path is correct. If absent, add it once.
+
+**macOS/Linux:**
 
 ```sh
-codex mcp add meiju -- /absolute/path/meiju-mcp/.venv/bin/meiju-mcp
+codex mcp add meiju -- "/absolute/path/meiju-mcp/.venv/bin/meiju-mcp"
 codex mcp get meiju
 ```
 
-A saved configuration does not prove that the client connected. Inspect its active tools and call `meiju_login_status`; follow the [official client documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli). Avoid starting extra MCP processes that each require their own login.
+**Windows PowerShell:**
+
+```powershell
+codex mcp add meiju -- "C:\projects\meiju-mcp\.venv\Scripts\meiju-mcp.exe"
+codex mcp get meiju
+```
+
+Codex clients on the same host share their user MCP configuration. Alternatively, use Settings → MCP servers → Add server in the desktop client: select STDIO, enter the platform-specific executable path above, and leave arguments empty. Choose one setup route, avoiding duplicate entries; see the [official documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
+
+Next, open a new local chat or interactive Codex CLI session and check `/mcp` for a connected `meiju` server. Ask “List my Meiju devices” without explicitly invoking the Skill. The first response should use actual native MCP tools and guide you to a local login page if unauthenticated. Complete login in that page, then continue the same chat with a device-list request and a status question. Detailed [discovery and conversation acceptance steps](docs/agent-skill.md#原生加载与对话验收) distinguish implicit Skill selection from explicit invocation and from saved configuration alone.
+
+If a host requires a reload after initial configuration, do it before Meiju login. Preserve already authenticated sessions. If tools are missing, inspect startup errors, executable paths and dependencies instead of asking the agent to start a separate terminal MCP process and claiming native connectivity.
 
 ## Natural-language control skill
 

@@ -45,31 +45,49 @@ MCP 提供工具和参数校验，Skill 组织登录、目标匹配、读写及�
 
 ## 快速安装
 
-先在官方美居 App 中绑定设备。准备 Python 3.11+，以及支持启动本地 stdio MCP 服务的 AI 客户端。你可以把项目源码放在任意本地目录，以下路径均为占位示例。
+先在官方美居 App 中绑定设备。安装顺序是：**准备运行环境 → 安装 MCP → [安装 Skill](docs/agent-skill.md#安装) → 配置客户端 → 在新聊天验收 → 登录美居**。先完成配置，再登录，避免为了加载 Skill 重启已经登录的进程。
 
-可以从 Release 下载源码 ZIP，或执行 `git clone https://github.com/blackcocwhite/meiju-mcp.git` 获取仓库；需要固定版本时使用 `v0.2.0` 标签。
+### 1. 检查前置条件
 
-推荐使用 [uv](https://docs.astral.sh/uv/)：
+需要 Python 3.11+ 和支持本地 stdio MCP 的客户端。浏览器、客户端与 MCP 须在同一台电脑；远程服务器加本地浏览器不是本版本的登录方式。
+
+- macOS/Linux：运行 `python3 --version`；Windows PowerShell：运行 `py -3 --version`，确认所选 Python 不低于 3.11。若命令不存在或版本过旧，先从 [Python 官网](https://www.python.org/downloads/)安装合适版本。
+- 使用 uv 路径时先运行 `uv --version`；没有 uv 时按 [uv 安装指南](https://docs.astral.sh/uv/getting-started/installation/)安装，或者选择下面的 pip 路径。
+- 使用 Codex CLI 配置时先运行 `codex --version`，并完成客户端自身的安装和账号登录；美居登录是后面的独立步骤。桌面客户端也可通过设置界面添加 MCP。
+
+### 2. 获取文件并安装 MCP
+
+从 [Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.0) 下载源码 ZIP，解压后进入含有 `pyproject.toml` 和 `uv.lock` 的目录（通常叫 `meiju-mcp-0.2.0`）。也可执行 `git clone https://github.com/blackcocwhite/meiju-mcp.git`；固定版本使用 `v0.2.0` 标签。以下 `/absolute/path/meiju-mcp` 都应替换为你的实际目录。
+
+**源码 + uv（各平台通用）：**
 
 ```sh
 cd /absolute/path/meiju-mcp
 uv sync --frozen
-uv run --frozen --directory /absolute/path/meiju-mcp meiju-mcp
+uv run --frozen meiju-mcp --version
 ```
 
-也可以在虚拟环境中用 pip 从源码安装：
+**源码 + pip，macOS/Linux：**
 
 ```sh
 cd /absolute/path/meiju-mcp
-python -m venv .venv
-# macOS / Linux
-. .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install .
-meiju-mcp
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+.venv/bin/meiju-mcp --version
 ```
 
-`meiju-mcp` 运行的是 stdio MCP 服务。直接从终端启动后等待输入是正常现象；通常应由 AI 客户端启动并管理该进程。无需把登录凭据写入环境变量或客户端配置。
+**源码 + pip，Windows PowerShell：**
+
+```powershell
+Set-Location "C:\projects\meiju-mcp"
+py -3 -m venv .venv
+& .\.venv\Scripts\python.exe -m pip install .
+& .\.venv\Scripts\meiju-mcp.exe --version
+```
+
+**仅下载 wheel 的用户：**在一个固定的安装目录创建 `.venv`；将上面的 `pip install .` 替换为 `pip install "/path/to/meiju_mcp-0.2.0-py3-none-any.whl"`，其余版本检查和 MCP 注册步骤相同。Skill 另下载 `meiju-control-0.2.0.zip`，按[独立 ZIP 安装步骤](docs/agent-skill.md#安装)安装，不需要再下载完整源码。
+
+版本检查应输出 `0.2.0` 后退出。**此时不要手动运行一个常驻的 `meiju-mcp` 进程**；完成 Skill 和客户端配置后，由客户端启动它。若误在终端直接运行而一直等待输入，按 Ctrl+C 停止这个手动启动的进程，再继续配置；不要停止其他已登录的会话。凭据无需写入环境变量或客户端配置。
 
 ## 配置 AI 客户端
 
@@ -98,22 +116,33 @@ pip 安装后，也可将 `command` 指向虚拟环境内的 `meiju-mcp` 可执�
 
 本版本只提供本地 stdio 传输。仅接受远程 MCP 地址的客户端、无法启动本地进程的网页 AI，不能直接接入。登录链接指向启动 MCP 进程那台机器的 `127.0.0.1`，浏览器也应在同一台机器上打开；当前不提供远程部署登录方案。
 
-### Codex 配置示例
+### Codex 配置与首次验收
 
-完成源码安装后，先检查是否已配置，避免同名重复添加：
+先完成 [Skill 安装](docs/agent-skill.md#安装)，再检查 MCP 是否已有配置：
 
 ```sh
 codex mcp get meiju
 ```
 
-尚未配置时，将已安装虚拟环境的可执行文件接入：
+没有该条目时，根据系统添加一次。**macOS/Linux：**
 
 ```sh
-codex mcp add meiju -- /absolute/path/meiju-mcp/.venv/bin/meiju-mcp
+codex mcp add meiju -- "/absolute/path/meiju-mcp/.venv/bin/meiju-mcp"
 codex mcp get meiju
 ```
 
-配置存在只证明启动命令已保存。还需在客户端查看工具目录，并调用 `meiju_login_status` 或列举工具来验证连接；方法以[客户端官方说明](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)为准。不要为重复验收启动多个需要分别登录的 MCP 进程。
+**Windows PowerShell：**
+
+```powershell
+codex mcp add meiju -- "C:\projects\meiju-mcp\.venv\Scripts\meiju-mcp.exe"
+codex mcp get meiju
+```
+
+已有条目时先核对可执行文件路径，正确就复用，不重复添加。CLI 默认写入当前 Codex 主机的用户配置，桌面客户端和 CLI 共享该配置。桌面界面也可在 **Settings → MCP servers → Add server** 中选择 STDIO，填入上述可执行文件路径，参数留空；二选一，不要再建第二个同名服务。具体界面以[客户端官方说明](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)为准。
+
+接着完成[原生加载与对话验收](docs/agent-skill.md#原生加载与对话验收)：打开新的本机聊天或交互式 Codex CLI，在 `/mcp` 中确认 `meiju` 已连接，再直接说“查看我现在的美居设备列表”。首次未登录时出现本机登录链接是正常结果。
+
+`codex mcp get` 只能证明配置已保存，不能证明工具已加载。首次配置尚未登录时，若宿主要求 Restart/重新加载，可按设置提示完成；已有登录会话不要为了测试而重启。工具仍缺失时先查启动错误、可执行路径和依赖，不要让 Agent 另开一个终端 MCP 进程冒充原生连接。
 
 ## 自然语言控制 Skill
 

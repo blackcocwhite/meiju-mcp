@@ -16,36 +16,102 @@ MCP 提供 7 个工具，Skill 告诉 Agent 如何登录、选设备、控制及
 
 ## 安装
 
-先按 [README](../README.md#配置-ai-客户端)连接 MCP，确认客户端能发现 `meiju_login_status`、`meiju_list_devices`、`meiju_control` 等工具。首次使用需要在 MCP 所在电脑的页面上登录自己的账号。Skill 不迁移其他应用的登录态。
+先按 [README](../README.md#快速安装)完成 Python 服务安装，但暂时不用登录美居。再安装本页 Skill，配置客户端并验收加载，最后登录。MCP 不迁移其他应用或其他进程的登录态。
 
-### Codex
+### 选择安装来源
 
-当前 Codex 的个人 Skill 目录是 `~/.agents/skills`，项目目录是 `.agents/skills`，二选一，避免同名重复安装。安装和隐式调用机制见 [OpenAI 官方说明](https://learn.chatgpt.com/docs/build-skills?surface=cli)。
+目录结构不同，请先选对来源：
 
-从本项目根目录运行以下 macOS/Linux 命令，将整个 Skill 目录复制到个人目录；目标已存在时停止，避免覆盖已有版本：
+| 你下载了什么 | Skill 源目录 |
+| --- | --- |
+| 完整源码 ZIP、git 仓库或 sdist | 项目目录中的 `skills/meiju-control/` |
+| 独立 `meiju-control-0.2.0.zip` | 解压目录中的 `meiju-control/`，没有外层 `skills/` |
+
+无论哪种来源，目录内都应直接包含 `SKILL.md`、`agents/openai.yaml`、`references/conversations.md`、`LICENSE` 和 `NOTICE`。安装整个目录，不要只复制 `SKILL.md`，也不要多嵌套一层 `meiju-control`。
+
+### Codex：macOS/Linux
+
+先从下面两种来源中**选择一段**执行，并替换路径；随后在**同一个终端会话**执行共同复制步骤，以保留源目录变量。
+
+源码用户，在项目根目录运行：
 
 ```sh
-mkdir -p "$HOME/.agents/skills"
-if [ -e "$HOME/.agents/skills/meiju-control" ] || [ -L "$HOME/.agents/skills/meiju-control" ]; then
+cd /absolute/path/meiju-mcp
+meiju_skill_source="$PWD/skills/meiju-control"
+```
+
+独立 Skill ZIP 用户，在解压后的父目录运行：
+
+```sh
+cd /absolute/path/extracted-skill
+meiju_skill_source="$PWD/meiju-control"
+```
+
+然后执行共同的复制步骤：
+
+```sh
+meiju_skill_target="$HOME/.agents/skills/meiju-control"
+if [ ! -f "$meiju_skill_source/SKILL.md" ]; then
+  echo '找不到 SKILL.md，请先确认上面的源目录。'
+elif [ -e "$meiju_skill_target" ] || [ -L "$meiju_skill_target" ]; then
   echo 'meiju-control 已存在；请先比较版本，不要重复安装。'
 else
-  cp -R skills/meiju-control "$HOME/.agents/skills/meiju-control"
+  mkdir -p "$(dirname "$meiju_skill_target")"
+  cp -R "$meiju_skill_source" "$meiju_skill_target"
 fi
 ```
 
-Windows 可把同一个 `meiju-control` 文件夹复制到用户目录的 `.agents/skills`，确保最终文件是 `.agents/skills/meiju-control/SKILL.md`，不是多嵌套一层目录。`pip` 安装的 wheel 仅提供 MCP 服务，不会写入用户的 Skill 目录；Skill 请取自项目源码、sdist 的 `skills/meiju-control` 或单独的 Skill ZIP。
+### Codex：Windows PowerShell
 
-安装后先用只读请求验收发现与连接：
+先从下面两种来源中**选择一段**执行；随后在**同一个 PowerShell 会话**执行共同复制步骤，以保留源目录变量。
 
-> 使用 $meiju-control 列出我的空调，不执行控制。
+源码用户，在项目根目录运行：
 
-确认 Skill 和 MCP 均可用后，可以省略 `$meiju-control`。若宿主尚未发现新 Skill，检查其技能列表或在新会话验证。不要为加载 Skill 重启一个已登录的 MCP；其内存会话会随进程结束而丢失。
+```powershell
+Set-Location "C:\projects\meiju-mcp"
+$meijuSkillSource = (Resolve-Path ".\skills\meiju-control").Path
+```
+
+独立 Skill ZIP 用户，在解压后的父目录运行：
+
+```powershell
+Set-Location "C:\Downloads\extracted-skill"
+$meijuSkillSource = (Resolve-Path ".\meiju-control").Path
+```
+
+然后执行共同的复制步骤：
+
+```powershell
+$meijuSkillTarget = Join-Path $HOME ".agents\skills\meiju-control"
+if (-not (Test-Path -LiteralPath (Join-Path $meijuSkillSource "SKILL.md") -PathType Leaf)) {
+    throw "找不到 SKILL.md，请确认源目录。"
+}
+if (Test-Path -LiteralPath $meijuSkillTarget) {
+    Write-Host "meiju-control 已存在；请先比较版本，不要重复安装。"
+} else {
+    New-Item -ItemType Directory -Path (Split-Path $meijuSkillTarget -Parent) -Force | Out-Null
+    Copy-Item -LiteralPath $meijuSkillSource -Destination $meijuSkillTarget -Recurse
+}
+```
+
+以上安装到个人目录 `~/.agents/skills`，可供不同聊天使用。如果只想在某个代码项目中使用，把目标改成**你将启动 Codex 的项目根目录**下的 `.agents/skills/meiju-control`。个人与项目安装二选一，避免同名重复。`pip` 和 uv 只安装 MCP 服务，不会代为复制 Skill。发现目录规则见 [OpenAI 官方说明](https://learn.chatgpt.com/docs/build-skills?surface=cli)。
+
+## 原生加载与对话验收
+
+1. **先配置 MCP。** 按 [README 的 Codex 步骤](../README.md#codex-配置与首次验收)添加一次服务，核对路径；`codex mcp get meiju` 只验收配置文件。
+2. **再开新聊天。** 使用运行 MCP 的同一台电脑，在 Codex 桌面应用新建本机聊天，或在项目目录启动交互式 `codex`。安装与配置的首次加载应安排在美居登录之前；若宿主要求重新加载，在此时处理。
+3. **检查原生入口。** 在支持的客户端输入 `/mcp`，确认 `meiju` 已连接。Codex CLI/IDE 可用 `/skills` 查看，或在聊天输入框键入 `$` 打开技能选择列表，查找 `meiju-control`；桌面应用可在 Skills 列表查看。以当前[官方界面说明](https://learn.chatgpt.com/docs/build-skills?surface=cli)为准。
+4. **验证自动触发。** 不加 `$meiju-control`，直接说“查看我现在的美居设备列表”。查看实际调用记录：应使用当前客户端暴露的美居 MCP 工具（名称可能带服务前缀），未登录时调用登录工具并给出本机链接。AI 口头说“已接入”或自行用终端启动服务，不算原生工具验收。
+5. **完成手动登录。** 在新工具返回的同机页面输入手机号、短信验证码和必要的图形验证码，然后在**同一个聊天**回复“已登录，请列出设备”。应看到该账号的真实设备；账号没有设备时空列表也是合法结果。不要把验证码发到聊天中。
+6. **验证连续对话。** 选择真实存在的房间，问“卧室的温度怎样”等只读问题，应读取对应设备状态，区分室温和设定温度。继续使用同一个 MCP 进程。控制测试需你明确指定目标和动作，不把文档示例自动执行一遍。
+
+如果自动触发没有发生，可先用“使用 $meiju-control 列出我的空调，不执行控制”诊断**显式调用**；显式成功不等于自动触发已通过。如果工具或 Skill 完全没出现在列表，检查安装目录、配置是否启用、可执行文件路径和客户端启动错误，再按宿主说明重新加载。不要为排查而退出或重启另一段已登录会话。
+
+登录页面关闭不等于退出 MCP 登录。链接过期或对应进程已退出时，回到当前聊天让 Agent 重新取得链接；不要复用另一个聊天或另一台机器的链接。多个客户端各自启动的 MCP 进程通常需要分别登录。
 
 ### 其他 Agent
 
-把完整的 `meiju-control` 文件夹放入该 Agent 支持的 Skill 目录，或按其导入方式加载。Agent 还须支持本地 stdio MCP 和同机浏览器登录；仅远程 MCP 的客户端不适用。可选的 `agents/openai.yaml` 不要求其他宿主识别。
-
-当前交付是 Skill 文件夹与 MCP 的配套安装，不宣称已经发布某个平台插件或实现跨客户端一键安装。
+本 Skill 使用标准文件夹格式，但其他 Agent 的安装目录、配置入口和重载方式并不统一；应按该宿主的 Skill 与本地 stdio MCP 文档安装，然后执行同样的工具发现、登录和只读对话验收。仅远程 MCP 的客户端不适用，可选的 `agents/openai.yaml` 不要求其他宿主识别。当前不宣称所有 Agent 均已测试，也未提供跨客户端一键安装插件。
 
 ## 如何定位目标
 
