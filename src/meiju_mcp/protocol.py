@@ -28,7 +28,9 @@ STATUS = "/mjl/v1/device/status/lua/get"
 CONTROL = "/mjl/v1/device/lua/control"
 ALLOWED_ALIASES = frozenset({SMS, LOGIN, HOMES, DEVICES, STATUS, CONTROL})
 
-# Public application constants from Controller/cloud-protocol-public.json.
+# Public application constants: midea_auto_cloud/core/cloud.py, clouds["美的美居"].
+# MUC_APP_KEY = app_key; IOT_SECRET = decoded iot_key; MAS_KEY = decoded hmac_key.
+# See NOTICE for the public source URL and verification date.
 MAS_KEY = "PROD_VnoClJI9aikS8dyy"
 IOT_SECRET = "prod_secret123@muc"
 MUC_APP_KEY = "46579c15"

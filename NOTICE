@@ -19,6 +19,14 @@ The upstream license text is retained in this project's LICENSE. No separate
 upstream NOTICE was present in the local reference snapshot; this statement is
 limited to that snapshot and is not a claim about all upstream releases.
 
+On 2026-10-14, the public upstream master source and LICENSE were rechecked:
+  https://github.com/sususweet/midea_auto_cloud/blob/master/custom_components/midea_auto_cloud/core/cloud.py
+  https://github.com/sususweet/midea_auto_cloud/blob/master/LICENSE
+In clouds["美的美居"], app_key corresponds to MUC_APP_KEY, decoded iot_key
+to IOT_SECRET, and decoded hmac_key to MAS_KEY in this implementation.
+All three values matched. The earlier internal public-constant snapshot was
+an intermediate reference, not a user credential store or additional dependency.
+
 Modifications and new implementation
 ------------------------------------
 Meiju MCP is a native Python implementation which ports interaction contracts

@@ -1,0 +1,6 @@
+interface:
+  display_name: "美居空调控制"
+  short_description: "通过美居 MCP 登录账号、按家庭房间和设备名定位空调并控制"
+  default_prompt: "使用 $meiju-control 打开客厅空调。"
+policy:
+  allow_implicit_invocation: true

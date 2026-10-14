@@ -1,19 +1,19 @@
 # 兼容性与验证范围
 
-本页记录 v0.1 的候选支持范围和证据边界。支持某种协议格式不等于已确认某台硬件完整兼容。
+本页记录当前 0.x 系列的候选支持范围和证据边界。支持某种协议格式不等于已确认某台硬件完整兼容；历史实测的代码基线见[验证记录](validation.md)。
 
 ## 实现与证据
 
 | 对象 | 当前证据 | 不能据此推断 |
 | --- | --- | --- |
 | 先前本地 Swift 实现 | 真实美居账号登录成功；读取过一台 IIPro 空调 | 新 Python 登录、其他型号、实机控制已经通过 |
-| 当前 Python/MCP 实现 | 本次只做离线 mock 与集成测试 | 真实短信登录、云端完整链路、设备实际执行已验证 |
+| 当前 Python/MCP 实现 | 历史离线测试；2026-10-14 对一台 `KFR-35G/N8HE1ⅡPro` 完成真实登录、设备与状态读取、单次开机和单次关机，用户确认实机响应 | 温度、模式、风速的独立控制、其他型号或长期可靠性已验证 |
 | Linux Python 3.11/3.13 | 已配置 CI 安装、静态检查与测试任务 | 托管 CI 已运行成功或有设备兼容性证据 |
 | macOS/Windows | 已配置 pip 安装和离线测试任务 | 所有系统版本、浏览器和 AI 客户端均兼容 |
-| 本地 stdio AI 客户端 | 提供 stdio MCP 协议和通用配置示例 | 每种客户端均经过人工接入验证 |
+| 本地 stdio AI 客户端 | 本机 Codex 配置已保存；持续 stdio JSON-RPC 连接完成上述实测 | 当前聊天原生工具目录自动加载、每种客户端均经过人工接入验证 |
 | 网页 AI / 仅远程 MCP 客户端 | 当前无直接接入实现 | 只填入某个 URL 即可连接 |
 
-CI 的实际状态应以对应提交的运行结果为准。任何后续实机报告都应注明代码版本、平台、公开型号、执行的具体动作和回读结果，并去除账号与设备标识。
+CI 的实际状态应以对应提交的运行结果为准。详细实测过程与边界见[验证记录](validation.md)。任何后续实机报告都应注明代码版本、平台、公开型号、执行的具体动作和回读结果，并去除账号与设备标识。
 
 ## 候选设备配置
 
@@ -50,7 +50,7 @@ CI 的实际状态应以对应提交的运行结果为准。任何后续实机�
 
 ## English summary
 
-The local Swift predecessor completed a real login and read one IIPro device. The new Python/MCP implementation has only offline mock and integration-test evidence from this work; real SMS and physical controls remain unverified. CI configuration is not a completed CI run.
+The local Swift predecessor's evidence remains separate. On 2026-10-14, the Python/MCP implementation completed real login, device discovery, status reads, one power-on request, and one power-off request for a single KFR-35G/N8HE1ⅡPro on a Mac. Cloud power readbacks matched, and the user confirmed physical startup and shutdown. Explicit temperature, mode, and fan controls, other models, and long-term reliability remain unverified. Codex configuration was saved; this session used a persistent stdio JSON-RPC connection, and native tool-catalog loading remains unverified. CI configuration is not a completed CI run.
 
 Type `0xAC` uses the experimental `generic_ac_lua_v1` profile without an IIPro model lock. The temperature, mode, and fan ranges above are client policy candidates, not discovered or confirmed hardware capabilities. Capabilities expose candidate policy and observed fields; unknown state stays unknown. Unsupported device types and arbitrary raw commands are rejected.
 

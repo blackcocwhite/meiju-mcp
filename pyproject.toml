@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meiju-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local MCP server for account-scoped Midea Meiju air-conditioner control"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12,<1", "build>=1.2,<2"
 packages = ["src/meiju_mcp"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/docs", "/.github", "/.gitignore", "/pyproject.toml", "/uv.lock", "/README.md", "/README.en.md", "/LICENSE", "/NOTICE", "/SECURITY.md", "/CONTRIBUTING.md"]
+include = ["/src", "/tests", "/docs", "/skills", "/.github", "/.gitignore", "/pyproject.toml", "/uv.lock", "/README.md", "/README.en.md", "/CHANGELOG.md", "/LICENSE", "/NOTICE", "/SECURITY.md", "/CONTRIBUTING.md"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

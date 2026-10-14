@@ -1,0 +1,44 @@
+Meiju MCP
+
+This project is distributed under the Apache License, Version 2.0.
+The complete license text is included in LICENSE.
+
+Protocol reference and attribution
+----------------------------------
+Public application protocol constants and cloud protocol behavior were referenced
+from midea_auto_cloud, available at:
+  https://github.com/sususweet/midea_auto_cloud
+Reference source:
+  custom_components/midea_auto_cloud/core/cloud.py
+Upstream license: Apache License, Version 2.0.
+
+The local reference snapshot was obtained on 2026-10-13. Its LICENSE was recorded
+as complete. Its cloud.py was a partial reference, not a complete executable
+copy. This project does not redistribute or execute that upstream source file.
+The upstream license text is retained in this project's LICENSE. No separate
+upstream NOTICE was present in the local reference snapshot; this statement is
+limited to that snapshot and is not a claim about all upstream releases.
+
+On 2026-10-14, the public upstream master source and LICENSE were rechecked:
+  https://github.com/sususweet/midea_auto_cloud/blob/master/custom_components/midea_auto_cloud/core/cloud.py
+  https://github.com/sususweet/midea_auto_cloud/blob/master/LICENSE
+In clouds["美的美居"], app_key corresponds to MUC_APP_KEY, decoded iot_key
+to IOT_SECRET, and decoded hmac_key to MAS_KEY in this implementation.
+All three values matched. The earlier internal public-constant snapshot was
+an intermediate reference, not a user credential store or additional dependency.
+
+Modifications and new implementation
+------------------------------------
+Meiju MCP is a native Python implementation which ports interaction contracts
+from a local Swift client. It adds a local stdio MCP interface, a browser-based
+login entry point, in-memory session handling, account-scoped device checks,
+restricted candidate air-conditioner profiles, and synthetic offline tests.
+It is not an unmodified distribution of midea_auto_cloud.
+
+The referenced application protocol constants are public application-level
+values. They are not a user's access token, do not identify a particular user,
+and do not authorize access to any account or device.
+
+Midea, Meiju, and other product names and trademarks belong to their respective
+owners. This project is not affiliated with or endorsed by those owners.
+Third-party dependencies remain subject to their respective licenses.
