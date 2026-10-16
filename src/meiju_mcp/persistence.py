@@ -106,6 +106,39 @@ def _windows_private(path: Path):
     )
 
 
+def _windows_create_private(path: Path, *, directory=False):
+    """Publish a new object with its owner/DACL already set; never repair an existing one."""
+    import pywintypes
+    import win32con
+    import win32file
+    import win32security
+
+    sid = win32security.ConvertSidToStringSid(_windows_user_sid())
+    flags = "OICI" if directory else ""
+    attributes = pywintypes.SECURITY_ATTRIBUTES()
+    attributes.bInheritHandle = False
+    attributes.SECURITY_DESCRIPTOR = win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
+        f"O:{sid}D:P(A;{flags};FA;;;{sid})", win32security.SDDL_REVISION_1
+    )
+    try:
+        if directory:
+            win32file.CreateDirectory(str(path), attributes)
+        else:
+            handle = win32file.CreateFile(
+                str(path),
+                win32con.GENERIC_READ | win32con.GENERIC_WRITE,
+                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE,
+                attributes,
+                win32con.CREATE_NEW,
+                win32con.FILE_ATTRIBUTE_NORMAL,
+                None,
+            )
+            handle.Close()
+    except pywintypes.error as exc:
+        if exc.winerror not in (80, 183):  # FILE_EXISTS / ALREADY_EXISTS: caller still validates it.
+            raise
+
+
 class SessionStore:
     def __init__(self, directory: Path | None = None, vault=None):
         self.directory = Path(os.path.abspath(directory or default_directory()))
@@ -138,10 +171,14 @@ class SessionStore:
             if parent.exists() and getattr(parent.lstat(), "st_file_attributes", 0) & 0x400:
                 raise StorageError("storage_unsafe")
         if not self.directory.exists():
-            self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
             if sys.platform == "win32":
-                _windows_private(self.directory)
+                self.directory.parent.mkdir(parents=True, exist_ok=True)
+                _windows_create_private(self.directory, directory=True)
+            else:
+                self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         self._check_path(self.directory, directory=True)
+        if sys.platform == "win32":
+            _windows_create_private(self.lock_path)
         if self.lock_path.exists() or self.lock_path.is_symlink():
             self._check_path(self.lock_path)
 
@@ -149,9 +186,9 @@ class SessionStore:
     def _locked(self):
         try:
             self._prepare()
-            with FileLock(self.lock_path, timeout=2, mode=0o600):
-                if sys.platform == "win32":
-                    _windows_private(self.lock_path)
+            # Keep the private Windows lock object instead of recreating it with a
+            # default owner between competing clients.
+            with FileLock(self.lock_path, timeout=2, mode=0o600, preserve_lock_file=True):
                 self._check_path(self.lock_path)
                 yield
         except StorageError:

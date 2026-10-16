@@ -813,7 +813,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.12,<4" },
     { name = "cryptography", specifier = ">=44,<51" },
-    { name = "filelock", specifier = ">=3.18,<4" },
+    { name = "filelock", specifier = ">=3.32.7,<4" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "jsonschema", specifier = ">=4.20,<5" },
     { name = "keyring", specifier = ">=25,<26" },

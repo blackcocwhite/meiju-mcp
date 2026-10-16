@@ -359,6 +359,47 @@ def test_concurrent_first_directory_initialization(store):
         assert list(pool.map(read, range(4))) == ["empty"] * 4
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows atomic security attributes")
+def test_windows_initialization_never_repairs_visible_permissions(store, monkeypatch):
+    def reject_repair(path):
+        raise AssertionError("permissions must be assigned when the object is created")
+
+    monkeypatch.setattr("meiju_mcp.persistence._windows_private", reject_repair)
+    assert store.revision() == "empty"
+    store._check_path(store.directory, directory=True)
+    store._check_path(store.lock_path)
+    assert store.lock_path.exists()  # Stable lock identity survives release.
+    assert store.revision() == "empty"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows cross-process initialization")
+def test_windows_first_initialization_across_processes(store):
+    code = (
+        "import sys; from pathlib import Path; "
+        "from meiju_mcp.persistence import SessionStore; "
+        "print(SessionStore(Path(sys.argv[1]), object()).revision())"
+    )
+    children = [
+        subprocess.Popen(
+            [sys.executable, "-c", code, str(store.directory)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for _ in range(4)
+    ]
+    try:
+        for child in children:
+            output, error = child.communicate(timeout=30)
+            assert child.returncode == 0, error
+            assert output.strip() == "empty"
+    finally:
+        for child in children:
+            if child.poll() is None:
+                child.terminate()
+                child.wait(timeout=10)
+
+
 async def test_failed_restore_keeps_disk_and_exposes_storage_error(store):
     persist(store)
     before = store.path.read_bytes()
