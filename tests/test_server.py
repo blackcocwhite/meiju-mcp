@@ -116,7 +116,7 @@ async def connected():
         server = create_server(lambda: cloud, lambda _: portal)
         async with Client(server) as client:
             yield client, fixture, cloud, portal
-        assert cloud.auth_status() == {"authenticated": False}
+        assert cloud.auth_status()["authenticated"] is False
         assert portal._runner is None
 
 
@@ -156,7 +156,7 @@ async def test_tool_discovery_has_no_credential_parameters_and_no_network():
         control = next(t for t in tools if t.name == "meiju_control")
         assert control.annotations.read_only_hint is False
         assert control.annotations.idempotent_hint is False
-        assert result_data(await client.call_tool("meiju_login_status")) == {"authenticated": False}
+        assert result_data(await client.call_tool("meiju_login_status"))["authenticated"] is False
         error = await client.call_tool("meiju_list_devices")
         assert error.is_error and "not_authenticated" in error.model_dump_json()
         assert fixture.requests == []
@@ -248,11 +248,11 @@ async def test_unknown_exception_is_sanitized():
 async def test_real_stdio_process_discovery_login_link_and_cleanup(mode):
     # No SMS/API POST is made: this launches the actual public CLI and exercises
     # both current discovery and the legacy initialize handshake used by hosts.
-    params = StdioServerParameters(command=sys.executable, args=["-m", "meiju_mcp"])
+    params = StdioServerParameters(command=sys.executable, args=["-m", "meiju_mcp", "--session-only"])
     async with asyncio.timeout(20):
         async with Client(params, mode=mode) as client:
             assert {t.name for t in (await client.list_tools()).tools} == TOOLS
-            assert result_data(await client.call_tool("meiju_login_status")) == {"authenticated": False}
+            assert result_data(await client.call_tool("meiju_login_status"))["authenticated"] is False
             login = result_data(await client.call_tool("meiju_login"))
             again = result_data(await client.call_tool("meiju_login"))
             assert login["login_url"] == again["login_url"]
@@ -264,3 +264,40 @@ async def test_real_stdio_process_discovery_login_link_and_cleanup(mode):
         async with httpx.AsyncClient(trust_env=False) as browser:
             with pytest.raises(httpx.ConnectError):
                 await browser.get(origin)
+
+
+async def test_mcp_browser_remember_and_new_runtime_restore(tmp_path):
+    from test_persistence import Vault
+
+    from meiju_mcp.persistence import SessionStore
+
+    store = SessionStore(tmp_path.resolve() / "mcp-session", Vault())
+    fixture = CloudFixture()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(fixture)) as http:
+        first_cloud = MeijuClient(http, store=store)
+        first_server = create_server(lambda: first_cloud)
+        async with Client(first_server) as client:
+            login = result_data(await client.call_tool("meiju_login"))
+            split = urlsplit(login["login_url"])
+            origin = f"{split.scheme}://{split.netloc}"
+            headers = {"Origin": origin, "X-Meiju-Flow": parse_qs(split.fragment)["flow"][0]}
+            async with httpx.AsyncClient(base_url=origin, trust_env=False) as browser:
+                assert (
+                    await browser.post("/api/sms", headers=headers, json={"mobile": MOBILE})
+                ).status_code == 200
+                response = await browser.post(
+                    "/api/login", headers=headers, json={"mobile": MOBILE, "code": "123456", "remember": True}
+                )
+                assert response.json()["persistence_status"] == "saved"
+                assert TOKEN not in response.text
+            assert result_data(await client.call_tool("meiju_login_status"))["persistence_status"] == "saved"
+        fixture.requests.clear()
+        second_cloud = MeijuClient(http, store=store)
+        async with Client(create_server(lambda: second_cloud)) as client:
+            status = result_data(await client.call_tool("meiju_login_status"))
+            assert status["session_source"] == "restored"
+            devices = result_data(await client.call_tool("meiju_list_devices"))["devices"]
+            assert len(devices) == 1
+            assert not any(r.url.params["alias"] in {protocol.LOGIN, protocol.SMS} for r in fixture.requests)
+            assert result_data(await client.call_tool("meiju_logout"))["authenticated"] is False
+            assert store.load()[1] is None

@@ -146,7 +146,7 @@ def assert_safe(value):
 
 async def test_login_contract_redaction_and_existing_session_sends_no_sms():
     client, stub = await logged_in()
-    assert client.auth_status() == {"authenticated": True}
+    assert client.auth_status()["authenticated"] is True
     assert_safe(client.auth_status())
     assert TOKEN not in repr(client)
     assert await client.request_sms(OTHER_MOBILE) == {"status": "authenticated", "authenticated": True}
@@ -464,7 +464,7 @@ async def test_revoked_session_clears_account_and_device_handles():
     with pytest.raises(MeijuError) as error:
         await client.get_status(devices[0]["device_id"])
     assert error.value.code == "session_expired"
-    assert client.auth_status() == {"authenticated": False}
+    assert client.auth_status()["authenticated"] is False
     assert not client._devices
     assert not stub.writes
 
@@ -484,13 +484,13 @@ async def test_logout_prevents_inflight_login_resurrecting_session():
     await entered.wait()
     logout = asyncio.create_task(client.logout())
     await asyncio.sleep(0)
-    assert client.auth_status() == {"authenticated": False}
+    assert client.auth_status()["authenticated"] is False
     release.set()
     with pytest.raises(MeijuError) as error:
         await login
     assert error.value.code == "session_changed"
     await logout
-    assert client.auth_status() == {"authenticated": False}
+    assert client.auth_status()["authenticated"] is False
 
 
 async def test_concurrent_controls_are_serial_and_each_gets_a_fresh_read():
@@ -562,7 +562,7 @@ async def test_logout_during_response_close_cannot_commit_late_login():
         await login
     assert error.value.code == "session_changed"
     await logout
-    assert client.auth_status() == {"authenticated": False}
+    assert client.auth_status()["authenticated"] is False
 
 
 async def test_cancellation_after_write_send_reports_uncertain_and_does_not_retry():
@@ -636,7 +636,7 @@ async def test_write_ack_session_expired_clears_account_authority(code):
     with pytest.raises(MeijuError) as error:
         await client.control(devices[0]["device_id"], power=True)
     assert error.value.code == "session_expired"
-    assert client.auth_status() == {"authenticated": False}
+    assert client.auth_status()["authenticated"] is False
     assert not client._devices
     assert len(stub.writes) == 1
 

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>登录美居 · 本机连接</title>
+  <link rel="stylesheet" href="/login.css">
+  <script defer src="/login.js"></script>
+</head>
+<body>
+  <main class="card">
+    <p class="eyebrow"><span class="dot"></span> 仅在这台电脑上连接</p>
+    <h1>登录美居</h1>
+    <p class="intro">使用你自己的已有账号。请先在美居 App 中绑定要控制的空调。</p>
+    <form id="login-form" autocomplete="off">
+      <label for="mobile">手机号</label>
+      <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="11" pattern="1[3-9][0-9]{9}" placeholder="输入美居账号手机号" required>
+      <section id="captcha-section" hidden>
+        <label for="captcha">图形验证码</label>
+        <div class="captcha-row">
+          <input id="captcha" name="captcha" type="text" autocomplete="off" maxlength="16" placeholder="输入右侧字符">
+          <img id="captcha-image" alt="图形验证码，请人工输入图中字符">
+        </div>
+        <p class="hint">填写图形验证码后，再点「发送验证码」。</p>
+      </section>
+      <label for="code">短信验证码</label>
+      <div class="code-row">
+        <input id="code" name="code" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入 6 位短信验证码" required>
+        <button id="send-sms" class="secondary" type="button">发送验证码</button>
+      </div>
+      <label class="remember"><input id="remember" name="remember" type="checkbox"> 记住这台电脑</label>
+      <p class="hint">勾选后安全保存登录态，同一系统用户的 MCP 可共享；主动退出会清除保存的登录。</p>
+      <button id="login-button" class="primary" type="submit">登录美居</button>
+    </form>
+    <div id="status" role="status" aria-live="polite"></div>
+    <aside class="privacy">
+      <p>登录后，此 MCP 客户端可以读取并控制该账号下的空调。</p>
+      <p>手机号和验证码不进入 AI 对话。不保存手机号和验证码。仅在勾选后，用系统凭据库保护本机加密登录态；未勾选则只用于本次进程。</p>
+    </aside>
+    <p class="footer">链接 10 分钟内有效 · 请勿分享登录链接</p>
+  </main>
+</body>
+</html>

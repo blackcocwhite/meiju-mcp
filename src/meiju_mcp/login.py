@@ -51,6 +51,10 @@ class LoginClient(Protocol):
 
     async def logout(self) -> None: ...
 
+    def finish_login(self, remember: bool) -> dict[str, Any]: ...
+
+    async def discard_login(self) -> None: ...
+
 
 @dataclass
 class _Flow:
@@ -198,7 +202,7 @@ class LoginPortal:
             return _error("already_authenticated", "美居已登录，请关闭此页面。", 409)
         return flow
 
-    async def _body(self, request: web.Request, allowed: set[str]) -> dict[str, str] | web.Response:
+    async def _body(self, request: web.Request, allowed: set[str]) -> dict[str, Any] | web.Response:
         if request.content_type != "application/json":
             return _error("invalid_input", "请通过此登录页面提交。", 415)
         try:
@@ -209,7 +213,9 @@ class LoginPortal:
         if (
             not isinstance(body, dict)
             or set(body) - allowed
-            or any(not isinstance(v, str) for v in body.values())
+            or any(
+                type(v) is not bool if k == "remember" else not isinstance(v, str) for k, v in body.items()
+            )
         ):
             return _error("invalid_input", "输入格式有误，请检查后重试。")
         return body
@@ -299,7 +305,7 @@ class LoginPortal:
             flow = self._authorize(request)
             if isinstance(flow, web.Response):
                 return flow
-            body = await self._body(request, {"mobile", "code"})
+            body = await self._body(request, {"mobile", "code", "remember"})
             if isinstance(body, web.Response):
                 return body
             flow = self._authorize(request)
@@ -317,12 +323,23 @@ class LoginPortal:
                 return self._client_error(exc)
             if flow.expires_at <= time.monotonic():
                 self._flow = None
-                await self._client.logout()
+                await self._client.discard_login()
                 return _error("flow_expired", "登录链接已失效，请返回 AI 客户端重新发起登录。", 410)
             if not self._client.auth_status().get("authenticated"):
                 return _error("login_failed", "登录未完成，请检查验证码后重试。", 401)
+            try:
+                saved = self._client.finish_login(body.get("remember", False))
+            except Exception as exc:
+                return self._client_error(exc)
             self._flow = None
-            return web.json_response({"status": "authenticated", "message": "美居登录成功，可以关闭此页面。"})
+            message = "美居登录成功，可以关闭此页面。"
+            if body.get("remember"):
+                message = (
+                    "美居登录成功，已安全记住这台电脑。重启 MCP 后可恢复登录。"
+                    if saved.get("persistence_status") == "saved"
+                    else "本次已登录，但未能安全保存登录态；重启后需要重新登录。"
+                )
+            return web.json_response({"status": "authenticated", "message": message, **saved})
 
     @staticmethod
     def _client_error(exc: Exception, **extra: Any) -> web.Response:

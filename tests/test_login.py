@@ -56,6 +56,12 @@ class FakeClient:
         self.authenticated = True
         return {"authenticated": True, "untrusted_token": "MUST_NOT_ESCAPE"}
 
+    def finish_login(self, remember):
+        return {"persistence_status": "saved" if remember else "not_saved"}
+
+    async def discard_login(self):
+        await self.logout()
+
     async def logout(self):
         self.logout_calls += 1
         self.authenticated = False
@@ -477,3 +483,21 @@ async def test_cleanup_releases_port_and_is_idempotent(portal):
     assert instance._flow is instance._runner is instance._host is instance._origin is None
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", port))
+
+
+@pytest.mark.parametrize("remember", [False, True])
+async def test_remember_is_explicit_boolean_and_reported(portal, remember):
+    await post(portal)
+    status, result, _ = await post(
+        portal, "/api/login", {"mobile": MOBILE, "code": CODE, "remember": remember}
+    )
+    assert status == 200
+    assert result["persistence_status"] == ("saved" if remember else "not_saved")
+
+
+@pytest.mark.parametrize("value", ["true", "false", 1, None, []])
+async def test_remember_rejects_coercion(portal, value):
+    await post(portal)
+    status, _, _ = await post(portal, "/api/login", {"mobile": MOBILE, "code": CODE, "remember": value})
+    assert status == 400
+    assert portal[1].verify_calls == []

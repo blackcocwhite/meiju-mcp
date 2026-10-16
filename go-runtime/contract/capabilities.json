@@ -1,0 +1,35 @@
+{
+  "profile_id": "generic_ac_lua_v1",
+  "verified": false,
+  "experimental": true,
+  "range_source": "client_policy",
+  "observed_fields": [],
+  "candidate_controls": {
+    "power": [
+      true,
+      false
+    ],
+    "target_temperature": {
+      "min": 17.0,
+      "max": 30.0,
+      "step": 0.5,
+      "unit": "celsius"
+    },
+    "mode": [
+      "cool",
+      "heat",
+      "auto",
+      "dry",
+      "fan"
+    ],
+    "fan_speed": [
+      "silent",
+      "low",
+      "medium",
+      "high",
+      "full",
+      "auto"
+    ]
+  },
+  "explanation": "These are experimental generic 0xAC Lua candidates and client policy limits, not hardware-discovered capabilities. They have never been cross-model tested; the server or device may reject them. Observed fields only mean the cloud response contained recognizable values; they do not establish control support or a live device reading."
+}

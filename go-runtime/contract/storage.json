@@ -1,0 +1,13 @@
+{
+  "test_only": true,
+  "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+  "record": {
+    "schema": 1,
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "ciphertext": "AAECAwQFBgcICQoLPCCidK6ArDm3YbX4yIcMBeai7lfdGC0TSxTI6XwHZ8dgd8vR2655/RqGU82q401OhzoF0jOygeAftUh7eoGXjJJepBixs0QDfjbIDI3tbIpa6KsAFAExCp+fvLHIVTJotM9NXc/AO0cQZh+R"
+  },
+  "payload": {
+    "token": "synthetic-cross-language-token",
+    "device_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

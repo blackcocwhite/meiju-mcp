@@ -4,6 +4,7 @@
   history.replaceState(null, "", location.pathname);
   const form = document.querySelector("#login-form");
   const mobile = document.querySelector("#mobile");
+  const remember = document.querySelector("#remember");
   const code = document.querySelector("#code");
   const captcha = document.querySelector("#captcha");
   const captchaSection = document.querySelector("#captcha-section");
@@ -25,7 +26,7 @@
     send.disabled = busy || done || (!challenge && seconds > 0);
     login.disabled = busy || done;
     mobile.disabled = busy || done || challenge;
-    code.disabled = captcha.disabled = busy || done;
+    code.disabled = captcha.disabled = remember.disabled = busy || done;
   }
   function stop(message, success = false) {
     done = true;
@@ -39,7 +40,7 @@
   }
   async function post(path, body) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 35000);
+    const timeout = setTimeout(() => controller.abort(), 65000);
     try {
       const response = await fetch(path, {
         method: "POST",
@@ -117,8 +118,8 @@
     refresh();
     show("正在登录美居…");
     try {
-      const result = await post("/api/login", {mobile: mobile.value.trim(), code: code.value.trim()});
-      if (result.status === "authenticated") stop("美居登录成功。返回 AI 客户端即可使用，可以关闭此页面。", true);
+      const result = await post("/api/login", {mobile: mobile.value.trim(), code: code.value.trim(), remember: remember.checked});
+      if (result.status === "authenticated") stop(result.message || "美居登录成功，可以关闭此页面。", true);
     } catch (error) {
       show(error.message, "error");
     } finally {

@@ -1,0 +1,235 @@
+[
+  {
+    "name": "meiju_login",
+    "description": "Start/reuse a local login page. Show login_url to the human; never request phone/OTP in chat.\n\n        Does not itself send SMS or contact Meiju. An existing login is reused.\n        ",
+    "inputSchema": {
+      "properties": {},
+      "title": "meiju_loginArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_loginDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "meiju_login_status",
+    "description": "Check whether the human has completed local login. Returns no phone, code or token.",
+    "inputSchema": {
+      "properties": {},
+      "title": "meiju_login_statusArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_login_statusDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "meiju_logout",
+    "description": "Forget this session and its saved login (if shared); invalidate pending login pages.\n\n        This does not unbind devices, revoke the official app's login, or change AC settings.\n        ",
+    "inputSchema": {
+      "properties": {},
+      "title": "meiju_logoutArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_logoutDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "meiju_list_devices",
+    "description": "Load account devices; only the experimental AC profile supports controls. Use opaque device_id.",
+    "inputSchema": {
+      "properties": {},
+      "title": "meiju_list_devicesArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_list_devicesDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "meiju_get_status",
+    "description": "Read selected AC's cloud status. Missing fields stay unknown; cloud data may be cached.",
+    "inputSchema": {
+      "properties": {
+        "device_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Device Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id"
+      ],
+      "title": "meiju_get_statusArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_get_statusDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "meiju_get_capabilities",
+    "description": "Inspect the candidate protocol profile and observed fields, not guaranteed hardware capabilities.\n\n        The generic profile is experimental. Unknown fields must not be treated as defaults.\n        ",
+    "inputSchema": {
+      "properties": {
+        "device_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Device Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id"
+      ],
+      "title": "meiju_get_capabilitiesArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_get_capabilitiesDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "meiju_control",
+    "description": "Change only requested fields on an account-owned AC; at least one setting is required.\n\n        Power is an explicit boolean. Mode/fan/temperature never implicitly turn power on.\n        Temperature uses the candidate 17–30°C / 0.5°C client policy. Checks membership and\n        fresh state before one write, then independently reads back. Never auto-retry an\n        uncertain outcome. A matching cloud readback does not prove physical execution.\n        ",
+    "inputSchema": {
+      "properties": {
+        "device_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Device Id",
+          "type": "string"
+        },
+        "power": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Power"
+        },
+        "target_temperature": {
+          "anyOf": [
+            {
+              "maximum": 30,
+              "minimum": 17,
+              "multipleOf": 0.5,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Temperature"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "cool",
+                "heat",
+                "dry",
+                "fan"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "fan_speed": {
+          "anyOf": [
+            {
+              "enum": [
+                "silent",
+                "low",
+                "medium",
+                "high",
+                "full",
+                "auto"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fan Speed"
+        }
+      },
+      "required": [
+        "device_id"
+      ],
+      "title": "meiju_controlArguments",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "meiju_controlDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  }
+]

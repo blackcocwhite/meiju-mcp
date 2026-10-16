@@ -29,10 +29,11 @@ an intermediate reference, not a user credential store or additional dependency.
 
 Modifications and new implementation
 ------------------------------------
-Meiju MCP is a native Python implementation which ports interaction contracts
-from a local Swift client. It adds a local stdio MCP interface, a browser-based
-login entry point, in-memory session handling, account-scoped device checks,
-restricted candidate air-conditioner profiles, and synthetic offline tests.
+Meiju MCP includes Python and Go implementations which port interaction
+contracts from a local Swift client. It adds local MCP interfaces, a shared
+loopback service and Swift test UI, a browser-based login entry point, opt-in
+encrypted sessions, account-scoped device checks, restricted candidate
+air-conditioner profiles, and synthetic offline tests.
 It is not an unmodified distribution of midea_auto_cloud.
 
 The referenced application protocol constants are public application-level

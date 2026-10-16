@@ -2,223 +2,148 @@
 
 [简体中文](README.md)
 
-Ask your AI agent to turn on the living-room air conditioner, read the bedroom temperature, or turn off the device you just selected.
+Use your own Meiju account to let an AI agent find air conditioners by home, room and device name, read their state and request controls. The Go development architecture lets a menu-bar app and agents share one account service and login.
 
-Meiju MCP combines a **local Python stdio MCP server** with the **`meiju-control` Agent Skill**, using your own Midea Meiju account and devices already bound in the official app. **Version 0.2.1 is experimental**, requires Python 3.11+, and uses the MCP Python SDK (`mcp>=2.3,<3`).
+**Version status:** [v0.2.1](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.1) is the published **Python prerelease**. `main` includes unreleased Python opt-in persistence and a **Go + Swift development preview**; no new Go installation package has been released. The project is not on PyPI and is not affiliated with or endorsed by Midea/Meiju.
 
-This is an independent project, unaffiliated with and not endorsed by Midea or Meiju. Source is available at [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp), with version packages on [GitHub Releases](https://github.com/blackcocwhite/meiju-mcp/releases). It has not been published to PyPI.
+[Installation](docs/installation.md) · [Agent Skill](docs/agent-skill.md) · [Conversations](skills/meiju-control/references/conversations.md) · [Compatibility](docs/compatibility.md) · [Go validation](docs/go-validation.md) · [Security](SECURITY.md)
 
-[Install](#install-from-source) · [Connect](#connect-an-ai-client) · [Conversation examples](skills/meiju-control/references/conversations.md) · [Compatibility](docs/compatibility.md) · [Validation](docs/validation.md) · [Changelog](CHANGELOG.md) · [GitHub preparation](docs/github-release.md)
+## What it does
 
-## Scope and evidence
+- Opens a local browser login page for the user to enter their phone number, SMS code and, when required, image CAPTCHA on the same computer as the MCP service.
+- Lists account-bound devices and reads power, setpoint, indoor temperature, mode, fan speed and candidate capabilities. Unknown fields remain unknown.
+- Helps an agent resolve the target from home, room and device names, asking when the target is ambiguous.
+- Provides experimental power, 17–30°C half-degree setpoints, mode and fan controls. Each write checks current device membership and state, sends once, and reads back once. Uncertain writes are not retried automatically.
+- Adds shared App/agent login, opt-in encrypted persistence, restart restoration and profile relocation in the Go preview. The Swift test app defaults to read-only.
 
-The server provides a local browser login flow, account-scoped device discovery, status reads, candidate capabilities, and restricted air-conditioner controls. Type `0xAC` devices use the experimental `generic_ac_lua_v1` profile; there is no IIPro-only model lock.
+Account registration/recovery, device binding, swing, schedules, energy reporting, direct LAN control and remotely hosted login are not supported. Queries and controls require the Meiju cloud. Overseas MSmartHome accounts and other Midea appliance categories are not guaranteed to work.
 
-**On 2026-10-14, the Python/MCP implementation completed real account login, device discovery, status reads, one power-on request, and one power-off request for a single `KFR-35G/N8HE1ⅡPro`, using the same MCP process on one Mac.** Cloud readbacks matched both power requests, and the user confirmed physical startup and shutdown. Initial and post-start states were compared with the Meiju app. Explicit temperature, mode, and fan controls remain untested. Neither universal air-conditioner support nor compatibility with every AI client is claimed. See [validation](docs/validation.md) and [compatibility](docs/compatibility.md).
+## Architecture
 
-| Capability | Implementation | Live evidence |
+```mermaid
+flowchart TD
+    A[Swift menu-bar app] --> BA[Go bridge · app]
+    U[AI agent + meiju-control Skill] --> BC[Go bridge · codex]
+    BA --> G[Shared Go service · 7 MCP tools]
+    BC --> G
+    B[Same-computer browser · manual login] --> G
+    G --> C[Meiju cloud API]
+    C --> D[Account-bound air conditioner]
+    G <--> S[Encrypted session + stable profile identity]
+    G --> H[Fixed-identity credential helper]
+    BA -.client credential.-> H
+    BC -.client credential.-> H
+    H <--> K[OS credential store]
+```
+
+One Go service owns one account/profile. Each client starts a lightweight stdio `bridge`, which connects to the shared loopback HTTPS service using client authentication and a pinned server certificate. App and Codex have separate local client identities. Closing a client does not log out the account; explicitly logging out affects clients sharing that profile.
+
+Go owns cloud requests, login, device authorization, state and control. Swift owns the UI; the Skill guides the conversation. The Go/Swift runtime does not require a bundled Python environment. Its credential helper is built independently, so ordinary service/App rebuilds do not change the executable identity accessing Keychain.
+
+**The Python entry remains available:** agent → local stdio Python MCP → Meiju cloud. Existing Python configurations are not automatically switched to Go, and neither implementation imports the other's credentials automatically. Go also has standalone stdio mode; see the [Go development guide](go-runtime/README.md).
+
+## Choose an installation path
+
+| Path | Intended use | Current scope |
 | --- | --- | --- |
-| Account login | Local browser; the user enters phone, SMS and any image code | Verified |
-| Device discovery | Names, homes, rooms, models and online status | One AC verified |
-| State reads | Power, target/indoor temperature, mode and fan; unknown fields stay unknown | Read and compared with the app |
-| Power on/off | One partial write followed by readback | One on and one off on the same model |
-| Temperature, mode and fan | Restricted experimental candidate controls | Explicit writes untested |
-| Natural-language device selection | Skill combines home, room and name, clarifying ambiguity | A separate local Codex chat verified implicit selection, login and read-only dialogue; other clients are not individually tested |
+| Python v0.2.1 prerelease | Use MCP through an agent | Python 3.11+; cross-platform offline tests and macOS hardware evidence |
+| Python source on `main` | Test unreleased opt-in persistence | Requires an available OS credential store for saving; `--session-only` is also available |
+| Go + Swift development preview | Share one service between App and agents | Local macOS 14+ developer setup; Go 1.25+, Swift 6/Xcode command-line tools and Python 3 for installation tooling |
 
-The project does not implement device binding, account registration/recovery, swing, timers, energy reporting, LAN-only control or remote hosted login. Overseas MSmartHome accounts and other Midea appliance types are not claimed compatible.
+Windows/Linux Go binaries can be cross-compiled, but helper installers and native credential-store acceptance are incomplete. Shared-mode deployment is not offered as a ready-to-use installation on those platforms. The Swift app is macOS-only.
 
-The flow is: user → AI agent and Skill → local stdio MCP process → Meiju cloud → bound device. A browser on the MCP machine handles login over loopback. This is cloud control, not an offline LAN solution. Account credentials remain inside the MCP process; the agent uses tools rather than receiving the phone number, code or token.
+### Python prerelease quick start
 
-## Install from source
-
-Bind your devices in the official Meiju app first. Follow this order: **prepare prerequisites → install MCP → [install the Skill](docs/agent-skill.md#安装) → configure the client → verify a new chat → log in to Meiju**. Finish setup before login so a client reload does not discard a newly authenticated MCP session.
-
-### Prerequisites
-
-Use Python 3.11+ and a client supporting local stdio MCP. The browser, client and MCP must run on the same computer; a remote server plus a local browser is outside this login flow.
-
-Check `python3 --version` on macOS/Linux or `py -3 --version` in Windows PowerShell. If missing or too old, install a suitable version from [Python](https://www.python.org/downloads/). For the uv route, check `uv --version` and use the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) if needed, or choose pip. For Codex CLI setup, confirm `codex --version` works and complete the client's own account setup first; Meiju login is separate.
-
-Download a source ZIP from [Releases](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.1) and enter the extracted directory containing `pyproject.toml` and `uv.lock` (usually `meiju-mcp-0.2.1`). Alternatively, run `git clone https://github.com/blackcocwhite/meiju-mcp.git`; use tag `v0.2.1` for a fixed version. Replace placeholder paths below with your actual directory.
-
-**Source with uv, all platforms:**
+First bind the device in the official Meiju app. Install Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/), then use a fresh directory:
 
 ```sh
-cd /absolute/path/meiju-mcp
+git clone --branch v0.2.1 --depth 1 https://github.com/blackcocwhite/meiju-mcp.git
+cd meiju-mcp
 uv sync --frozen
 uv run --frozen meiju-mcp --version
 ```
 
-**Source with pip, macOS/Linux:**
-
-```sh
-cd /absolute/path/meiju-mcp
-python3 -m venv .venv
-.venv/bin/python -m pip install .
-.venv/bin/meiju-mcp --version
-```
-
-**Source with pip, Windows PowerShell:**
-
-```powershell
-Set-Location "C:\projects\meiju-mcp"
-py -3 -m venv .venv
-& .\.venv\Scripts\python.exe -m pip install .
-& .\.venv\Scripts\meiju-mcp.exe --version
-```
-
-**Wheel-only users:** create `.venv` in a permanent installation directory and replace `pip install .` above with `pip install "/path/to/meiju_mcp-0.2.1-py3-none-any.whl"`. Download the separate `meiju-control-0.2.1.zip` and follow its [standalone Skill installation steps](docs/agent-skill.md#安装); a full source checkout is not required.
-
-The version check should print `0.2.1` and exit. Do not manually leave a stdio server running at this point; let the configured AI client start it after installing the Skill. If a manually started terminal command waits for input, stop only that process with Ctrl+C and continue setup. Do not stop another authenticated session. No account credentials are needed in environment variables or MCP configuration.
-
-## Connect an AI client
-
-A common local MCP configuration is:
+Install the [Skill](docs/agent-skill.md) before configuring the client. Set the MCP command to the environment's `meiju-mcp` executable:
 
 ```json
 {
   "mcpServers": {
     "meiju": {
-      "command": "uv",
-      "args": ["run", "--frozen", "--directory", "/absolute/path/meiju-mcp", "meiju-mcp"]
+      "command": "/absolute/path/meiju-mcp/.venv/bin/meiju-mcp",
+      "args": []
     }
   }
 }
 ```
 
-Replace the project path with its absolute location. Use the absolute path to `uv` if the client cannot find it. Windows JSON paths require escaped backslashes, for example `C:\\projects\\meiju-mcp`. The configuration location and wrapper format depend on the client.
+On Windows, use `C:\\projects\\meiju-mcp\\.venv\\Scripts\\meiju-mcp.exe`. The enclosing configuration format depends on your client. Inspect and reuse an existing `meiju` entry instead of adding duplicates. The client starts MCP; a successful version check does not prove native tools have loaded.
 
-For a pip installation, set `command` to the virtual environment executable and `args` to `[]`: `/absolute/path/meiju-mcp/.venv/bin/meiju-mcp` on macOS/Linux or `C:\\projects\\meiju-mcp\\.venv\\Scripts\\meiju-mcp.exe` on Windows.
+See [installation](docs/installation.md) for wheel/pip/Windows instructions, native Codex acceptance, and the complete Go helper/service/App sequence. Use an independent checkout and profile for the Go preview; do not overwrite a running binary or an existing login directory.
 
-Only local stdio transport is included. Web-only AI clients and clients that require a remote MCP URL cannot connect directly. Login links use `127.0.0.1` on the server's machine, so open them in a browser on that same machine. Remote deployment login is outside this release's scope.
+## Skill and conversation examples
 
-### Codex setup and first-use verification
+MCP exposes the tools; the Skill tells the agent how to resolve devices and interpret results. Install both separately.
 
-Install the [Skill](docs/agent-skill.md#安装) first. Run `codex mcp get meiju` and reuse an existing entry if its executable path is correct. If absent, add it once.
+| Intent | Example | Behavior |
+| --- | --- | --- |
+| List devices | “List my Meiju devices.” | Read-only |
+| Read temperature | “How warm is the bedroom?” | Separates indoor temperature from setpoint |
+| Power on | “Turn on the living-room AC.” | Requests power only |
+| Set temperature | “Set the bedroom AC to 26°C.” | Does not imply power-on |
+| Combined control | “Turn on the living-room AC, cooling at 26°C, automatic fan.” | One combined request for an unambiguous target |
+| Continue context | “Turn that one off.” | Continues only when the target is clear |
 
-**macOS/Linux:**
+If two homes have a living room, the agent asks which one. A bedroom device is not substituted for a missing living-room device. When login is needed, the agent gives the user a newly generated local link, then resumes the original request after manual login. Do not put phone numbers, codes or tokens in chat.
 
-```sh
-codex mcp add meiju -- "/absolute/path/meiju-mcp/.venv/bin/meiju-mcp"
-codex mcp get meiju
-```
+These examples explain interaction, not hardware validation of every control combination. More multi-turn examples are in the [conversation guide](skills/meiju-control/references/conversations.md).
 
-**Windows PowerShell:**
-
-```powershell
-codex mcp add meiju -- "C:\projects\meiju-mcp\.venv\Scripts\meiju-mcp.exe"
-codex mcp get meiju
-```
-
-Codex clients on the same host share their user MCP configuration. Alternatively, use Settings → MCP servers → Add server in the desktop client: select STDIO, enter the platform-specific executable path above, and leave arguments empty. Choose one setup route, avoiding duplicate entries; see the [official documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
-
-Next, open a new local chat or interactive Codex CLI session and check `/mcp` for a connected `meiju` server. Ask “List my Meiju devices” without explicitly invoking the Skill. The first response should use actual native MCP tools and guide you to a local login page if unauthenticated. Complete login in that page, then continue the same chat with a device-list request and a status question. Detailed [discovery and conversation acceptance steps](docs/agent-skill.md#原生加载与对话验收) distinguish implicit Skill selection from explicit invocation and from saved configuration alone.
-
-If a host requires a reload after initial configuration, do it before Meiju login. Preserve already authenticated sessions. If tools are missing, inspect startup errors, executable paths and dependencies instead of asking the agent to start a separate terminal MCP process and claiming native connectivity.
-
-## Natural-language control skill
-
-The companion standard [`meiju-control`](skills/meiju-control/SKILL.md) skill handles requests such as “turn on the living-room AC” and “turn that one off.” It resolves devices from the current account list using home, room, and device names; a unique exact match proceeds, while ambiguity, conflicting locations, and missing matches require clarification.
-
-Connect the MCP server and install the skill separately. See the [installation and usage guide](docs/agent-skill.md). Installing the Python package does not install the skill into your agent or prove that the host has loaded it. The skill folder uses the standard SKILL.md format; its workflow and installation guide are written in Chinese.
-
-| Request | Action |
-| --- | --- |
-| List my devices | Read only |
-| What is the bedroom temperature? | Report indoor and target temperatures separately |
-| Turn on the living-room AC | Power only; no implicit cooling mode or temperature |
-| Turn that one off | Recheck the uniquely selected device, then turn it off |
-| Set the bedroom AC to 26°C | Temperature only; does not implicitly power on |
-| Turn on the living-room AC, cooling at 26°C, automatic fan | One combined control request |
-
-Duplicate home/room names, conflicting locations and missing targets require clarification. The Skill never substitutes the only bedroom AC for a requested living-room AC. See the [multi-turn conversation guide](skills/meiju-control/references/conversations.md) for login, ambiguity and uncertain results; these are synthetic usage examples, not additional hardware test claims.
-
-## Login and use
-
-Ask your AI client:
-
-> Open the Meiju login page. After I finish signing in in my browser, list my air conditioners.
-
-1. `meiju_login` returns a local browser link on a randomly assigned port.
-2. Open that link and manually enter your phone number, SMS code, and any required image captcha **in the browser, not in chat**.
-3. Use `meiju_login_status` to confirm login, then `meiju_list_devices`.
-4. Select a device and check `meiju_get_status` and `meiju_get_capabilities` before requesting a specific change.
-
-Example requests:
-
-> Read the living-room air conditioner's current status and candidate capabilities.
->
-> Set the selected living-room air conditioner to cooling at 26°C, and report the readback.
->
-> Log out of Meiju.
-
-These are example requests, not actions already performed. If device names are ambiguous, resolve the target from the device list. A timeout or mismatched readback must not be reported as confirmed success or trigger an automatic repeated write.
+## Tools
 
 | Tool | Purpose |
 | --- | --- |
-| `meiju_login` | Create or reuse a local login entry point |
-| `meiju_login_status` | Inspect this process's login state |
-| `meiju_logout` | Clear this process's in-memory session |
-| `meiju_list_devices` | List devices available to the current account |
-| `meiju_get_status` | Read a device's cloud status |
-| `meiju_get_capabilities` | Report the candidate profile and observed fields |
-| `meiju_control` | Perform a restricted write followed by one readback |
+| `meiju_login` | Create or reuse the local login entry |
+| `meiju_login_status` | Report authentication, restoration and persistence status |
+| `meiju_logout` | Log out; shared mode also forgets the saved login |
+| `meiju_list_devices` | List account-bound devices |
+| `meiju_get_status` | Read the target AC's cloud-reported state |
+| `meiju_get_capabilities` | Report observed fields and experimental candidate controls |
+| `meiju_control` | Validate, send one control request and read back |
 
-`meiju_login()` returns `status: "login_required"` and `login_url` when login is needed, without automatically opening a browser. An authenticated process returns `authenticated`; repeated calls reuse a still-valid login entry point.
+## Login and data protection
 
-Control parameters are `device_id` plus optional `power`, `target_temperature`, `mode`, and `fan_speed`. Use the opaque device ID returned by the list tool unchanged. This example uses a synthetic ID only:
+- Login links expire and work on the service's computer. Phone numbers and verification codes are entered in the page and are not saved in the session file.
+- The published v0.2.1 uses process-memory sessions. Persistence on `main` is unreleased and requires explicitly selecting “remember this computer”.
+- Saved payloads contain an encrypted access token and client device identifier. AES-256-GCM protects the file; its key is in the OS credential store. There is no plaintext/file-password fallback.
+- Go uses a stable profile identity to locate keys across explicit directory migration. Migrate a stopped, consistent profile; do not run its copies as concurrent writers.
+- Normal Go calls suppress credential dialogs. If authorization is needed, they return an error; an operator can explicitly authorize after understanding why, rather than triggering repeated prompts.
+- These protections do not defend against malicious code running as the same user or an administrator. The development helper uses a fixed ad-hoc signature; production signing, upgrade handling and native cross-platform installation remain unfinished.
 
-```json
-{
-  "device_id": "synthetic-device-001",
-  "target_temperature": 26,
-  "mode": "cool"
-}
-```
+See [fixed helper](docs/fixed-vault-helper.md), [profile migration](docs/profile-migration.md), [Python persistence](docs/session-persistence.md) and [SECURITY.md](SECURITY.md).
 
-Multiple fields can be submitted as one partial write. The client sends only explicitly requested fields. Changing temperature or mode does not add a power-on command; explicitly include `power: true` when that is intended. Other device or cloud-reported fields may still change: during the power-only live test, temperature and fan readbacks also changed, for an unconfirmed reason. Report readbacks and user observations accordingly.
+## Validation and limits
 
-MCP tools do not directly accept phone numbers, verification codes, or tokens. Sessions are kept only in process memory and reused within that process. Restarting or logging out requires a new login. An existing Mac app session is not imported; separate MCP processes do not share sessions.
+| Area | Evidence |
+| --- | --- |
+| Python real login, device/state reads | Verified on macOS |
+| Python power on/off | One on and one off on `KFR-35G/N8HE1ⅡPro`, with human-confirmed physical response |
+| Go real login and shared App/agent reads | Verified |
+| Go encrypted save, restart restoration and relocation | Verified; fresh device reads revalidated cloud authorization |
+| Native Codex/Skill automatic activation and read-only calls | Verified |
+| Go hardware control; independent temperature/mode/fan control | Not yet accepted on real hardware |
+| Windows/Linux Go installation and credential stores | Not yet natively accepted |
 
-## Control limitations
+Cloud readback is not proof of physical execution. Preserve `freshness: unknown`, `execution_verified: false` and experimental capability qualifiers when explaining results. Evidence from one model does not establish compatibility with all Midea ACs.
 
-The candidate policy allows power, a target temperature from 17 to 30°C in 0.5°C steps, modes `cool`, `heat`, `auto`, `dry`, `fan`, and fan speeds `silent`, `low`, `medium`, `high`, `full`, `auto`. **These are client policy limits, not confirmed hardware capabilities.** A particular device may lack heating, half-degree settings, or a fan speed.
+[Python validation](docs/validation.md) · [Go validation](docs/go-validation.md) · [Compatibility](docs/compatibility.md)
 
-Capabilities report a candidate profile plus observed status fields; they do not automatically discover every hardware feature. Missing or unknown fields remain unknown. Arbitrary raw commands and unsupported device types are rejected. Unimplemented features such as swing and timers are not exposed.
+## Development and contributions
 
-Before each write the server refreshes account membership and reads current status. It sends one write and performs one readback, without automatic write retries. The cloud route is `commoncloud` `/mjl/v1/device/lua/control`. Meiju's server remains the final authority on account/device access. Use only your own account and devices you are authorized to control. Device binding, account registration, and recovery must be handled through the official app.
+`src/meiju_mcp/` contains Python; `go-runtime/` contains the Go service, connectors, helpers and Swift test app; `skills/meiju-control/` contains the agent Skill.
 
-Cloud behavior, anti-abuse checks, SMS limits, and firmware may change. An accepted cloud request alone does not prove physical execution. Read status after an error and preserve uncertainty when the result cannot be confirmed.
+CI checks Python offline tests, Go tests/race/vet, Windows/Linux cross-compilation, and macOS Swift builds, mock helper protocol checks and synthetic shared/migration/restart flows. CI does not log in to real accounts, access real Keychain items or control appliances. It is not hardware acceptance.
 
-## Development
-
-```sh
-uv sync --frozen --group dev
-uv run --frozen ruff check .
-uv run --frozen pytest
-uv build
-```
-
-Tests use synthetic fixtures and mocked transports, without real accounts, SMS requests, tokens, or devices. CI is configured for Linux Python 3.11/3.13 and installation/tests on macOS and Windows. This configuration is not evidence of a completed hosted CI run or physical device compatibility.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md), the [compatibility issue template](.github/ISSUE_TEMPLATE/compatibility.yml), and [SECURITY.md](SECURITY.md). Do not contribute personal device IDs, serial numbers, screenshots, raw account responses, APKs, or full decompiled source.
-
-The [validation record](docs/validation.md) separates historical offline tests, live device observations and version-build checks. Passing mocks is not evidence of compatibility with every device.
-
-## Common questions
-
-**Is the Skill required?** MCP-capable agents can call the tools directly. The companion Skill provides the device-selection and conversation workflow and is installed separately.
-
-**Will I have to log in each time?** One process reuses its session. A restart, logout or cloud expiry requires login again; separate processes do not share sessions.
-
-**Why does the terminal wait without opening a page?** It is a stdio service waiting for the client. `meiju_login` creates the local page on demand.
-
-**Does online mean powered on?** No. Connectivity and power are separate fields.
-
-**What ships in the packages?** Source ZIP and sdist include source, docs, tests and Skill. The wheel installs only the Python service; the Skill ZIP installs only the Skill. See [GitHub preparation](docs/github-release.md) for version artifacts and upload steps.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. Submit only sanitized source, tests and compatibility information—not personal paths, real device identifiers, raw responses, login data, virtual environments or local backups. A source push is not a new release; existing release assets remain unchanged.
 
 ## License and attribution
 
-[Apache License 2.0](LICENSE). This native Python implementation ports interaction contracts from a local Swift client. Public application protocol constants were referenced from the Apache-2.0 project [sususweet/midea_auto_cloud](https://github.com/sususweet/midea_auto_cloud). These constants are not user access tokens and do not grant account or device access.
-
-See [NOTICE](NOTICE) for attribution and modification details. Dependencies retain their own licenses. Midea, Meiju, and related trademarks belong to their respective owners.
+[Apache License 2.0](LICENSE). Python/Go implementations follow the local Swift client's interaction contract; public application protocol constants were informed by the Apache-2.0 [sususweet/midea_auto_cloud](https://github.com/sususweet/midea_auto_cloud) project. These constants are not user credentials and grant no account/device access. See [NOTICE](NOTICE) for attribution and modifications. Third-party dependencies retain their own licenses.

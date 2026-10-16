@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 authors = [{name = "Meiju MCP contributors"}]
-dependencies = ["mcp>=2.3,<3", "httpx>=0.28,<1", "aiohttp>=3.12,<4", "jsonschema>=4.20,<5"]
+dependencies = ["mcp>=2.3,<3", "httpx>=0.28,<1", "aiohttp>=3.12,<4", "jsonschema>=4.20,<5", "cryptography>=44,<51", "keyring>=25,<26", "filelock>=3.18,<4", "platformdirs>=4,<5", "pywin32>=308; sys_platform == 'win32'"]
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Operating System :: OS Independent", "Topic :: Home Automation"]
 
 [project.scripts]
@@ -23,7 +23,7 @@ dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12,<1", "build>=1.2,<2"
 packages = ["src/meiju_mcp"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/docs", "/skills", "/.github", "/.gitignore", "/pyproject.toml", "/uv.lock", "/README.md", "/README.en.md", "/CHANGELOG.md", "/LICENSE", "/NOTICE", "/SECURITY.md", "/CONTRIBUTING.md"]
+include = ["/src", "/tests", "/docs", "/go-runtime", "/skills", "/.github", "/.gitignore", "/pyproject.toml", "/uv.lock", "/README.md", "/README.en.md", "/CHANGELOG.md", "/LICENSE", "/NOTICE", "/SECURITY.md", "/CONTRIBUTING.md"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

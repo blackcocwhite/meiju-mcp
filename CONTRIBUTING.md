@@ -17,6 +17,19 @@ uv build
 
 修改依赖时同步更新 `pyproject.toml` 与 `uv.lock`。保持 Python 3.11 兼容，并检查现有测试覆盖的接口契约。CLI 的 stdout 专用于 MCP 协议；诊断输出不得混入 stdout，也不得包含凭据。
 
+## Go / Swift 开发验证
+
+Go 需要 1.25+；Swift 测试 App 需要 Swift 6 和 macOS 14+。在独立输出目录验证，不覆盖正在运行的程序或凭据助手：
+
+```sh
+MEIJU_TEST_NO_NATIVE_VAULT=1 go -C go-runtime test -race ./...
+go -C go-runtime vet ./...
+```
+
+macOS helper 的 mock 检查、Swift 构建和合成共享/迁移/重启流程见 [CI](.github/workflows/ci.yml) 与[安装说明](docs/installation.md)。CI 不访问真实 OS 凭据库，也不发送真实账号请求。Windows/Linux 交叉编译不代表原生安装已验证。
+
+Keep real profiles, helper installations and running applications separate from test outputs. Use the native-vault guard for automated Go tests. Do not run the production helper for credential operations in CI.
+
 ## 控制与兼容性改动
 
 新增设备类型或 profile 时，说明来源、假设、请求字段和观察到的返回字段。将候选范围与实机验证明确分开，不把某型号的一次结果推广到整个设备类型。

@@ -1,4 +1,4 @@
-"""Account-scoped, memory-only Meiju client. All requests are explicitly initiated.
+"""Account-scoped Meiju client with optional opt-in secure session persistence. All requests are explicitly initiated.
 
 Protocol reference: https://github.com/sususweet/midea_auto_cloud (Apache-2.0).
 This implementation deliberately has no registration, recovery, retry or LAN path.
@@ -19,6 +19,7 @@ from typing import Any
 import httpx
 
 from . import profiles, protocol
+from .persistence import Session, SessionStore, StorageError
 
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 _SUCCESS = {"0", "0000", "200"}
@@ -98,7 +99,7 @@ class MeijuClient:
     Normal clients use verified TLS, no environment proxies and no retries.
     """
 
-    def __init__(self, http_client: httpx.AsyncClient | None = None):
+    def __init__(self, http_client: httpx.AsyncClient | None = None, *, store: SessionStore | None = None):
         self._owns_http = http_client is None
         self._http = http_client or httpx.AsyncClient(
             verify=True,
@@ -116,21 +117,102 @@ class MeijuClient:
         self._client_device_id = uuid.uuid4().hex
         self._devices: dict[str, _Device] = {}
         self._device_ids: dict[str, str] = {}
+        self._store = store
+        self._shared = store is not None
+        # A failed read disables synchronization, not an explicit logout's duty
+        # to remove the saved account. Session-only login opts out separately.
+        self._forget_saved_on_logout = store is not None
+        self._revision: str | None = None
+        self._session_source = "none"
+        self._validation_status = "not_authenticated"
+        self._persistence_status = "not_saved" if store else "disabled"
+        self.refresh_session()
 
     def __repr__(self) -> str:
         return f"MeijuClient(authenticated={self._access_token is not None})"
 
     def auth_status(self) -> dict[str, Any]:
-        return {"authenticated": self._access_token is not None}
+        self.refresh_session()
+        return {
+            "authenticated": self._access_token is not None,
+            "session_source": self._session_source,
+            "validation_status": self._validation_status,
+            "persistence_status": self._persistence_status,
+        }
+
+    def refresh_session(self) -> None:
+        if self._closed or not self._shared or self._store is None:
+            return
+        try:
+            revision = self._store.revision()
+            if revision == self._revision:
+                return
+            revision, session = self._store.load()
+            self._generation += 1
+            self._clear()
+            self._revision = revision
+            self._persistence_status = "saved" if session else "not_saved"
+            if session:
+                self._access_token = session.token
+                self._client_device_id = session.device_id
+                self._session_source = "restored"
+                self._validation_status = "unvalidated"
+        except StorageError as exc:
+            self._generation += 1
+            self._clear()
+            self._revision = None
+            self._shared = False
+            self._persistence_status = exc.code
+
+    def _check_shared(self, *, uncertain=False) -> None:
+        if self._shared and self._store is not None:
+            try:
+                if self._revision is None or self._store.revision() != self._revision:
+                    raise StorageError("session_changed")
+            except StorageError as exc:
+                self._generation += 1
+                self._clear()
+                self._revision = None
+                self._persistence_status = exc.code
+                raise MeijuError(
+                    "session_changed", "The saved session changed or is unavailable.", uncertain
+                ) from None
+
+    def finish_login(self, remember: bool) -> dict[str, Any]:
+        """Commit only after the browser flow's final validity check; no shutdown saves."""
+        self._require_auth()
+        self._forget_saved_on_logout = remember and self._store is not None
+        if remember and self._store is not None:
+            try:
+                if self._revision is None:
+                    raise StorageError()
+                self._revision = self._store.save(
+                    Session(self._access_token, self._client_device_id), self._revision
+                )
+                self._shared = True
+                self._persistence_status = "saved"
+            except StorageError as exc:
+                if exc.code == "session_changed":
+                    self._clear()
+                    raise MeijuError("session_changed", "The saved session changed; sign in again.") from None
+                self._shared = False
+                self._persistence_status = exc.code
+        else:
+            self._shared = False
+            self._persistence_status = "disabled" if self._store is None else "not_saved"
+        return {"persistence_status": self._persistence_status}
 
     def _clear(self) -> None:
         self._access_token = None
+        self._session_source = "none"
+        self._validation_status = "not_authenticated"
         self._sms_issued_to = None
         self._pending_captcha = None
         self._devices.clear()
         self._device_ids.clear()
 
     def _check_generation(self, generation: int, *, uncertain: bool = False) -> None:
+        self._check_shared(uncertain=uncertain)
         if self._closed or generation != self._generation:
             raise MeijuError("session_changed", "The local session changed; start a new request.", uncertain)
 
@@ -143,9 +225,28 @@ class MeijuClient:
         # Invalidate before waiting for the lock: an in-flight login cannot resurrect a session.
         self._generation += 1
         self._clear()
+        failure = None
+        if self._forget_saved_on_logout and self._store is not None:
+            try:
+                self._store.forget()
+                self._revision = self._store.revision()
+                self._persistence_status = "not_saved"
+            except StorageError as exc:
+                self._persistence_status = exc.code
+                failure = MeijuError(
+                    "logout_incomplete", "Memory cleared; saved login could not be fully removed."
+                )
         async with self._lock:
             self._http.cookies.clear()
+        if failure:
+            raise failure
         return {"status": "logged_out", "authenticated": False}
+
+    async def discard_login(self) -> None:
+        """Abandon an expired browser flow without touching any shared saved login."""
+        self._generation += 1
+        self._clear()
+        self._http.cookies.clear()
 
     async def aclose(self) -> None:
         self._generation += 1
@@ -254,6 +355,12 @@ class MeijuClient:
 
     def _invalidate_expired_session(self, code: str) -> None:
         if code in _EXPIRED_SESSION_CODES:
+            if self._shared and self._store is not None and self._revision is not None:
+                try:
+                    self._store.forget(expected=self._revision)
+                    self._persistence_status = "not_saved"
+                except StorageError as exc:
+                    self._persistence_status = exc.code
             self._generation += 1
             self._clear()
             raise MeijuError("session_expired", "The cloud session expired; sign in locally again.")
@@ -272,6 +379,7 @@ class MeijuClient:
             )
 
     async def request_sms(self, mobile: str, captcha: str | None = None) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)
@@ -337,6 +445,7 @@ class MeijuClient:
         return f"data:image/{mime};base64,{base64.b64encode(raw).decode('ascii')}", token
 
     async def verify_sms(self, mobile: str, code: str) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)
@@ -385,13 +494,15 @@ class MeijuClient:
             ):
                 raise _malformed()
             self._access_token = token
+            self._session_source = "memory"
+            self._validation_status = "validated"
             self._sms_issued_to = None
             self._pending_captcha = None
             return {"status": "authenticated", "authenticated": True}
 
     async def _read(self, alias: str, fields: dict[str, Any]) -> dict[str, Any]:
         context = protocol.RequestContext.now()
-        return self._payload(
+        payload = self._payload(
             await self._request(
                 alias,
                 {**fields, "reqId": context.outer_request_id, "stamp": context.stamp},
@@ -399,8 +510,11 @@ class MeijuClient:
                 authenticated=True,
             )
         )
+        self._validation_status = "validated"
+        return payload
 
     async def list_devices(self) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)
@@ -508,12 +622,14 @@ class MeijuClient:
         }
 
     async def get_status(self, device_id: str) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)
             return await self._state(device_id)
 
     async def get_capabilities(self, device_id: str) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)
@@ -529,6 +645,7 @@ class MeijuClient:
         mode: str | None = None,
         fan_speed: str | None = None,
     ) -> dict[str, Any]:
+        self.refresh_session()
         generation = self._generation
         async with self._lock:
             self._check_generation(generation)

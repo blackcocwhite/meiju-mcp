@@ -29,12 +29,14 @@
         <input id="code" name="code" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入 6 位短信验证码" required>
         <button id="send-sms" class="secondary" type="button">发送验证码</button>
       </div>
+      <label class="remember"><input id="remember" name="remember" type="checkbox"> 记住这台电脑</label>
+      <p class="hint">勾选后安全保存登录态，同一系统用户的 MCP 可共享；主动退出会清除保存的登录。</p>
       <button id="login-button" class="primary" type="submit">登录美居</button>
     </form>
     <div id="status" role="status" aria-live="polite"></div>
     <aside class="privacy">
       <p>登录后，此 MCP 客户端可以读取并控制该账号下的空调。</p>
-      <p>手机号和验证码不进入 AI 对话。不会记住手机号或把登录令牌保存到磁盘；退出服务后需要重新登录。</p>
+      <p>手机号和验证码不进入 AI 对话。不保存手机号和验证码。仅在勾选后，用系统凭据库保护本机加密登录态；未勾选则只用于本次进程。</p>
     </aside>
     <p class="footer">链接 10 分钟内有效 · 请勿分享登录链接</p>
   </main>

@@ -2,6 +2,12 @@
 
 公开仓库为 [blackcocwhite/meiju-mcp](https://github.com/blackcocwhite/meiju-mcp)，版本为 **v0.2.1（实验性预发布）**。本地提交、tag、压缩包与远端发布是不同步骤；本页保留维护流程，实际发布状态见 [Release](https://github.com/blackcocwhite/meiju-mcp/releases/tag/v0.2.1)，CI 见 [Actions](https://github.com/blackcocwhite/meiju-mcp/actions)。未发布到 PyPI。
 
+## 源码更新不等于发布
+
+`main` 现在包含未发布的 Python 持久化和 Go/Swift 开发预览。只更新源码时不创建或重写 tag，不替换 v0.2.1 附件、不上传新包、不发布到 PyPI。先完成离线 CI、干净源码构建/安装和文档脱敏，再提交明确范围并核对远端提交。
+
+当前检查还包括 Go 测试/竞态/vet、Windows/Linux 交叉编译、macOS 原生助手编译与 mock 协议、Swift 构建和合成共享/迁移/重启。真实 OS 凭据、账号、设备和本机 `.local`/`.cache`/虚拟环境链接不进入公开提交或自动化。未来发布所需的正式签名、平台安装器与真机控制验收应另行完成。
+
 ## 公开仓库内容
 
 | 文件或目录 | 用途 |
@@ -12,6 +18,7 @@
 | `docs/compatibility.md` / `docs/validation.md` | 已验证范围、候选能力与证据日期 |
 | `docs/releases/v0.2.1.md` / `CHANGELOG.md` | 发布说明和版本变化 |
 | `src/` / `tests/` | Python 服务、登录页与合成离线测试 |
+| `go-runtime/` | Go 服务/连接器/助手、Swift 测试 App 与合成兼容验证 |
 | `pyproject.toml` / `uv.lock` | 包元数据和锁定依赖 |
 | `.github/` | CI、兼容性反馈模板和贡献入口 |
 | `LICENSE` / `NOTICE` / `SECURITY.md` / `CONTRIBUTING.md` | 许可、来源、安全报告与贡献约定 |
@@ -29,7 +36,7 @@
 | `SHA256SUMS.txt` | 核验上述附件的 SHA-256 |
 | `release-manifest.json` | 版本、Git 提交及文件校验值；用于追溯本地构建 |
 
-这些文件准备在本机 `dist/v0.2.1/`，不提交生成包到源码仓库。旧版本包保留原名，不覆盖。Skill 文件夹的版本跟随整个项目 tag。
+这些是历史 v0.2.1 附件名称；后续构建应使用隔离的输出目录，不提交生成包到源码仓库。旧版本包保留原名，不覆盖。Skill 文件夹的版本跟随整个项目 tag。
 
 ## 本地检查与打包
 
